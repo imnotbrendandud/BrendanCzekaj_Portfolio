@@ -451,6 +451,7 @@
   --cow-patch: #4a3a45;
   --cow-outline: #2a1f28;
   --cow-pink: #e8a0a8;
+  --cow-nostril: #c98a96;
   --cow-eye: #2a1f28;
 }
 
@@ -528,6 +529,7 @@
   --cow-patch: #2b2b33;
   --cow-outline: #1a1a20;
   --cow-pink: #f0a8b0;
+  --cow-nostril: #d4909c;
   --cow-eye: #1a1a20;
 }
 
@@ -603,6 +605,7 @@
   --cow-patch: #3d2a45;
   --cow-outline: #241628;
   --cow-pink: #dd97ad;
+  --cow-nostril: #b87b92;
   --cow-eye: #241628;
 }
 
@@ -677,6 +680,7 @@
   --cow-patch: #241c38;
   --cow-outline: #120e1c;
   --cow-pink: #a06878;
+  --cow-nostril: #6b4250;
   --cow-eye: #120e1c;
 }
 

@@ -16,6 +16,7 @@ const PALETTE: Record<string, string> = {
   b: 'var(--cow-patch)',
   k: 'var(--cow-outline)',
   p: 'var(--cow-pink)',
+  n: 'var(--cow-nostril)',
   e: 'var(--cow-eye)',
 };
 
@@ -95,8 +96,8 @@ export function Cow() {
 
     const place = () => {
       root.style.setProperty('--cow-x', `${(x / 100) * fieldWidth}px`);
-      // The sprite is drawn facing right, so flip it to walk the other way.
-      root.style.setProperty('--cow-flip', direction === 1 ? '1' : '-1');
+      // The sprite is drawn facing LEFT, so flip it to walk the other way.
+      root.style.setProperty('--cow-flip', direction === -1 ? '1' : '-1');
     };
 
     const tick = (now: number) => {
