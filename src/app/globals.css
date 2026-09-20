@@ -1,0 +1,1642 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   1. ANIMATABLE TOKENS
+   ---------------------------------------------------------------------------
+   Plain CSS custom properties cannot be transitioned — they flip instantly.
+   Registering them with @property gives each one a type, which makes it
+   interpolable, which is what lets the whole scene cross-fade between themes
+   in one declaration instead of needing stacked layers and JS orchestration.
+   =========================================================================== */
+
+/* Sky gradient. All four themes are resampled onto this shared 9-stop layout
+   so the stops can interpolate pairwise. Max resampling error vs. the original
+   art is 5.6/255 — invisible on a gradient this smooth. */
+@property --sky-0 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #05041a;
+}
+@property --sky-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #09072b;
+}
+@property --sky-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0e0b39;
+}
+@property --sky-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #140f44;
+}
+@property --sky-4 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b124f;
+}
+@property --sky-5 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #241459;
+}
+@property --sky-6 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #341960;
+}
+@property --sky-7 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #4a2060;
+}
+@property --sky-8 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6b2f5c;
+}
+
+/* Stars */
+@property --star-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --star-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8ecbff;
+}
+@property --star-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #9ad8ff;
+}
+@property --star-4 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #c4a0ff;
+}
+@property --star-5 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #d9a0ff;
+}
+@property --star-6 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff8a5c;
+}
+@property --star-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --dot-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --shoot-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #dbe8ff;
+}
+@property --shoot-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffd0e8;
+}
+@property --shoot-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #cfe3ff;
+}
+
+/* Clouds. --cloud-depth-bias controls how much a cloud's height suppresses it:
+   1 = all altitudes equally visible (daytime), 0 = only clouds near the
+   horizon show at all, which is how the night scene is lit. */
+@property --cloud-lit {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3a2f6b;
+}
+@property --cloud-shade {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2a2150;
+}
+@property --cloud-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.45;
+}
+@property --cloud-depth-bias {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Sun and moon share a position; the theme cross-fades between the two sprites
+   and slides them, so dawn's low sun becomes night's high moon in one motion. */
+@property --celestial-top {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 3.2%;
+}
+@property --celestial-left {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 79.2%;
+}
+@property --celestial-unit {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 7px;
+}
+@property --celestial-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 247, 214, 0.3);
+}
+@property --sun-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --moon-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --sun-ring {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffd23f;
+}
+@property --sun-core {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fff4c0;
+}
+@property --moon-light {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fdf3d0;
+}
+@property --moon-crater {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ded0a4;
+}
+
+/* Ground */
+@property --ridge-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #241a52;
+}
+@property --ridge-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #191142;
+}
+@property --ridge-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0f0a2e;
+}
+@property --ridge-1-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.95;
+}
+@property --ridge-2-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --ridge-3-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --tree-dark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #142620;
+}
+@property --tree-mid {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b3229;
+}
+@property --grass {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1d3a2e;
+}
+@property --grass-top {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2a5240;
+}
+@property --grass-speckle {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3d6b52;
+}
+@property --path {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #332a30;
+}
+@property --path-edge {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #42353c;
+}
+
+/* Panels. The dim/focus effect moves --panel-alpha, never the element's own
+   opacity: fading a whole panel bleeds the sky through its text and drops
+   contrast below WCAG AA (measured: accent text hits 2.69:1 at 0.6 opacity).
+   Fading only the background keeps text at full strength. The 0.80-0.95 band
+   used below is verified AA across all four themes at every panel position. */
+@property --panel-r {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 28;
+}
+@property --panel-g {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 22;
+}
+@property --panel-b {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 64;
+}
+@property --panel-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.88;
+}
+@property --panel-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6b5bd6;
+}
+@property --panel-inner {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(180, 160, 255, 0.25);
+}
+@property --panel-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(107, 91, 214, 0.35);
+}
+@property --panel-glow-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 30px;
+}
+@property --panel-drop-y {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --panel-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e8e4ff;
+}
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #a894ff;
+}
+
+/* Hero type */
+@property --title-outline {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1a0f3d;
+}
+@property --title-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(168, 148, 255, 0.7);
+}
+/* The footer sits on open sky, not on a panel, so it needs its own colour:
+   white is unreadable against the morning, day and evening horizons (measured
+   1.2-2.2:1). These four values are verified >=5:1 against the sky behind them. */
+@property --footer-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e8e4ff;
+}
+@property --dither-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 1);
+}
+
+/* ===========================================================================
+   2. THEME TOKEN SETS
+   One set of components, four token sets. Nothing below this block knows which
+   theme is active.
+   =========================================================================== */
+
+[data-theme='morning'] {
+  --sky-0: #2a3a7a;
+  --sky-1: #47579a;
+  --sky-2: #6b68aa;
+  --sky-3: #9176ad;
+  --sky-4: #b682a5;
+  --sky-5: #dc9794;
+  --sky-6: #f1b28c;
+  --sky-7: #fdd09b;
+  --sky-8: #ffecc9;
+
+  --star-1: #ffffff;
+  --star-2: #fff4cf;
+  --star-3: #e8f0ff;
+  --star-4: #fff8d8;
+  --star-5: #ffffff;
+  --star-6: #fff0f2;
+  --star-opacity: 0.5;
+  --dot-opacity: 0.45;
+  --shoot-1: #fff4cf;
+  --shoot-2: #ffd9e0;
+  --shoot-3: #e8f0ff;
+
+  --cloud-lit: #ffd9e0;
+  --cloud-shade: #e8a8bc;
+  --cloud-opacity: 0.93;
+  --cloud-depth-bias: 1;
+
+  /* A rising sun, low on the horizon. */
+  --celestial-top: 82.9%;
+  --celestial-left: 48.6%;
+  --celestial-unit: 9px;
+  --celestial-glow: rgba(255, 210, 140, 0.45);
+  --sun-opacity: 1;
+  --moon-opacity: 0;
+  --sun-ring: #ffc97b;
+  --sun-core: #fff8d8;
+  --moon-light: #ffc97b;
+  --moon-crater: #e0b070;
+
+  --ridge-1: #c48fa0;
+  --ridge-2: #a8748c;
+  --ridge-3: #7a5470;
+  --ridge-1-opacity: 0.5;
+  --ridge-2-opacity: 0.7;
+  --ridge-3-opacity: 0.9;
+  --tree-dark: #2f4f3d;
+  --tree-mid: #3d6350;
+  --grass: #5c8a6b;
+  --grass-top: #6fa07e;
+  --grass-speckle: #84b893;
+  --path: #9a7358;
+  --path-edge: #b08a68;
+
+  --panel-r: 74;
+  --panel-g: 44;
+  --panel-b: 70;
+  --panel-border: #ffb38a;
+  --panel-inner: rgba(255, 220, 190, 0.3);
+  --panel-glow: rgba(255, 179, 138, 0.3);
+  --panel-glow-size: 30px;
+  --panel-drop-y: 0px;
+  --panel-text: #fdf0e6;
+  --accent: #ffc999;
+
+  --title-outline: #4a2a4a;
+  --title-glow: rgba(255, 201, 153, 0.6);
+  --footer-text: #3a2038;
+}
+
+[data-theme='day'] {
+  --sky-0: #2d78c9;
+  --sky-1: #3f8ad5;
+  --sky-2: #529cdf;
+  --sky-3: #67ace6;
+  --sky-4: #7fbdeb;
+  --sky-5: #97cef0;
+  --sky-6: #b2dbf4;
+  --sky-7: #d1e9f8;
+  --sky-8: #f2fafd;
+
+  /* Daylight washes the stars out entirely. The DOM stays put so the night
+     sky fades back in rather than popping into existence. */
+  --star-1: #ffffff;
+  --star-2: #ffffff;
+  --star-3: #ffffff;
+  --star-4: #ffffff;
+  --star-5: #ffffff;
+  --star-6: #ffffff;
+  --star-opacity: 0;
+  --dot-opacity: 0;
+  --shoot-1: #ffffff;
+  --shoot-2: #ffffff;
+  --shoot-3: #ffffff;
+
+  --cloud-lit: #ffffff;
+  --cloud-shade: #d8e6f5;
+  --cloud-opacity: 0.96;
+  --cloud-depth-bias: 1;
+
+  --celestial-top: 3.5%;
+  --celestial-left: 77.8%;
+  --celestial-unit: 8px;
+  --celestial-glow: rgba(255, 226, 120, 0.38);
+  --sun-opacity: 1;
+  --moon-opacity: 0;
+  --sun-ring: #ffd23f;
+  --sun-core: #fff4c0;
+  --moon-light: #ffd23f;
+  --moon-crater: #e8bc3a;
+
+  --ridge-1: #9ccadb;
+  --ridge-2: #7ab0c4;
+  --ridge-3: #4f8a7a;
+  --ridge-1-opacity: 0.45;
+  --ridge-2-opacity: 0.6;
+  --ridge-3-opacity: 0.8;
+  --tree-dark: #2f6b42;
+  --tree-mid: #3d8254;
+  --grass: #5fb872;
+  --grass-top: #74cc86;
+  --grass-speckle: #8ade9c;
+  --path: #b08a60;
+  --path-edge: #c9a077;
+
+  --panel-r: 255;
+  --panel-g: 255;
+  --panel-b: 255;
+  --panel-border: #2a5a8c;
+  --panel-inner: rgba(120, 170, 220, 0.35);
+  --panel-glow: rgba(42, 90, 140, 0.25);
+  /* Daylight gets a hard pixel drop shadow instead of a glow. */
+  --panel-glow-size: 0px;
+  --panel-drop-y: 6px;
+  --panel-text: #1e2a38;
+  --accent: #2a5a8c;
+
+  --title-outline: #1c4470;
+  --title-glow: rgba(255, 244, 192, 0);
+  --footer-text: #12304f;
+}
+
+[data-theme='evening'] {
+  --sky-0: #2b1b6e;
+  --sky-1: #3f2788;
+  --sky-2: #58329c;
+  --sky-3: #743da8;
+  --sky-4: #9649a8;
+  --sky-5: #b956a1;
+  --sky-6: #d96b99;
+  --sky-7: #f08c91;
+  --sky-8: #ffc08a;
+
+  --star-1: #ffffff;
+  --star-2: #ffe9a8;
+  --star-3: #ffd4f0;
+  --star-4: #bfe4ff;
+  --star-5: #fff0b8;
+  --star-6: #ffc2e0;
+  --star-opacity: 0.8;
+  --dot-opacity: 0.7;
+  --shoot-1: #ffe9a8;
+  --shoot-2: #ffd4f0;
+  --shoot-3: #bfe4ff;
+
+  --cloud-lit: #c9a8f0;
+  --cloud-shade: #9b7ad6;
+  --cloud-opacity: 0.92;
+  --cloud-depth-bias: 1;
+
+  /* A setting sun, low on the horizon. */
+  --celestial-top: 78.8%;
+  --celestial-left: 41.7%;
+  --celestial-unit: 9px;
+  --celestial-glow: rgba(255, 200, 120, 0.42);
+  --sun-opacity: 1;
+  --moon-opacity: 0;
+  --sun-ring: #ffcf6b;
+  --sun-core: #fff0b0;
+  --moon-light: #ffcf6b;
+  --moon-crater: #e0b25c;
+
+  --ridge-1: #96639f;
+  --ridge-2: #7a4a8c;
+  --ridge-3: #5c3470;
+  --ridge-1-opacity: 0.6;
+  --ridge-2-opacity: 0.75;
+  --ridge-3-opacity: 0.9;
+  --tree-dark: #26382f;
+  --tree-mid: #31473b;
+  --grass: #4a6b5c;
+  --grass-top: #5c8270;
+  --grass-speckle: #6e9a85;
+  --path: #7a5a4a;
+  --path-edge: #8f6d58;
+
+  --panel-r: 56;
+  --panel-g: 28;
+  --panel-b: 86;
+  --panel-border: #e08ac4;
+  --panel-inner: rgba(255, 200, 235, 0.3);
+  --panel-glow: rgba(224, 138, 196, 0.35);
+  --panel-glow-size: 30px;
+  --panel-drop-y: 0px;
+  --panel-text: #fbeaf6;
+  --accent: #ffb3dd;
+
+  --title-outline: #3d1c5c;
+  --title-glow: rgba(255, 179, 221, 0.6);
+  --footer-text: #2a1240;
+}
+
+[data-theme='night'] {
+  --sky-0: #05041a;
+  --sky-1: #09072b;
+  --sky-2: #0e0b39;
+  --sky-3: #140f44;
+  --sky-4: #1b124f;
+  --sky-5: #241459;
+  --sky-6: #341960;
+  --sky-7: #4a2060;
+  --sky-8: #6b2f5c;
+
+  --star-1: #ffffff;
+  --star-2: #8ecbff;
+  --star-3: #9ad8ff;
+  --star-4: #c4a0ff;
+  --star-5: #d9a0ff;
+  --star-6: #ff8a5c;
+  --star-opacity: 1;
+  --dot-opacity: 1;
+  --shoot-1: #dbe8ff;
+  --shoot-2: #ffd0e8;
+  --shoot-3: #cfe3ff;
+
+  --cloud-lit: #3a2f6b;
+  --cloud-shade: #2a2150;
+  --cloud-opacity: 0.45;
+  --cloud-depth-bias: 0;
+
+  --celestial-top: 3.2%;
+  --celestial-left: 79.2%;
+  --celestial-unit: 7px;
+  --celestial-glow: rgba(255, 247, 214, 0.3);
+  --sun-opacity: 0;
+  --moon-opacity: 1;
+  --sun-ring: #fdf3d0;
+  --sun-core: #fdf3d0;
+  --moon-light: #fdf3d0;
+  --moon-crater: #ded0a4;
+
+  --ridge-1: #241a52;
+  --ridge-2: #191142;
+  --ridge-3: #0f0a2e;
+  --ridge-1-opacity: 0.95;
+  --ridge-2-opacity: 1;
+  --ridge-3-opacity: 1;
+  --tree-dark: #142620;
+  --tree-mid: #1b3229;
+  --grass: #1d3a2e;
+  --grass-top: #2a5240;
+  --grass-speckle: #3d6b52;
+  --path: #332a30;
+  --path-edge: #42353c;
+
+  --panel-r: 28;
+  --panel-g: 22;
+  --panel-b: 64;
+  --panel-border: #6b5bd6;
+  --panel-inner: rgba(180, 160, 255, 0.25);
+  --panel-glow: rgba(107, 91, 214, 0.35);
+  --panel-glow-size: 30px;
+  --panel-drop-y: 0px;
+  --panel-text: #e8e4ff;
+  --accent: #a894ff;
+
+  --title-outline: #1a0f3d;
+  --title-glow: rgba(168, 148, 255, 0.7);
+  --footer-text: #e8e4ff;
+}
+
+/* ===========================================================================
+   3. THEME TRANSITION
+   Enabled one frame after hydration by ThemeProvider, so the pre-paint theme
+   swap lands instantly and only *later* changes cross-fade.
+   =========================================================================== */
+
+html[data-theme-transitions='on'] {
+  transition:
+    --sky-0 2s ease,
+    --sky-1 2s ease,
+    --sky-2 2s ease,
+    --sky-3 2s ease,
+    --sky-4 2s ease,
+    --sky-5 2s ease,
+    --sky-6 2s ease,
+    --sky-7 2s ease,
+    --sky-8 2s ease,
+    --star-1 2s ease,
+    --star-2 2s ease,
+    --star-3 2s ease,
+    --star-4 2s ease,
+    --star-5 2s ease,
+    --star-6 2s ease,
+    --star-opacity 2s ease,
+    --dot-opacity 2s ease,
+    --shoot-1 2s ease,
+    --shoot-2 2s ease,
+    --shoot-3 2s ease,
+    --cloud-lit 2s ease,
+    --cloud-shade 2s ease,
+    --cloud-opacity 2s ease,
+    --cloud-depth-bias 2s ease,
+    --celestial-top 2s ease,
+    --celestial-left 2s ease,
+    --celestial-unit 2s ease,
+    --celestial-glow 2s ease,
+    --sun-opacity 2s ease,
+    --moon-opacity 2s ease,
+    --sun-ring 2s ease,
+    --sun-core 2s ease,
+    --moon-light 2s ease,
+    --moon-crater 2s ease,
+    --ridge-1 2s ease,
+    --ridge-2 2s ease,
+    --ridge-3 2s ease,
+    --ridge-1-opacity 2s ease,
+    --ridge-2-opacity 2s ease,
+    --ridge-3-opacity 2s ease,
+    --tree-dark 2s ease,
+    --tree-mid 2s ease,
+    --grass 2s ease,
+    --grass-top 2s ease,
+    --grass-speckle 2s ease,
+    --path 2s ease,
+    --path-edge 2s ease,
+    --panel-r 2s ease,
+    --panel-g 2s ease,
+    --panel-b 2s ease,
+    --panel-border 2s ease,
+    --panel-inner 2s ease,
+    --panel-glow 2s ease,
+    --panel-text 2s ease,
+    --accent 2s ease,
+    --title-outline 2s ease,
+    --title-glow 2s ease,
+    --footer-text 2s ease;
+}
+
+/* ===========================================================================
+   4. BASE
+   =========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  /* Pixel art: nothing gets rounded, anywhere. */
+  border-radius: 0 !important;
+}
+
+html {
+  background: var(--sky-0);
+  scroll-behavior: smooth;
+  /* Height of the ground band. The scene reserves this much room at its bottom
+     so content never lands on the grass. */
+  --ground-height: 520px;
+  /* Sprites are authored at desktop size; this shrinks the whole pixel grid on
+     narrow screens so a 128px sun doesn't eat a third of a phone. */
+  --px-scale: 1;
+}
+
+@media (max-width: 1024px) {
+  html {
+    --ground-height: 440px;
+    --px-scale: 0.78;
+  }
+}
+
+@media (max-width: 680px) {
+  html {
+    --ground-height: 340px;
+    --px-scale: 0.55;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  color: var(--panel-text);
+  overflow-x: hidden;
+}
+
+img,
+canvas,
+video {
+  image-rendering: pixelated;
+}
+
+.pixel-font {
+  font-family: var(--font-pixel), ui-monospace, monospace;
+  /* Press Start 2P has no real lowercase and no italics; keep it honest. */
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Skip link — first thing a keyboard user reaches. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 100;
+  padding: 10px 14px;
+  background: var(--panel-border);
+  color: #000;
+  border: 3px solid #000;
+  font-family: var(--font-pixel), monospace;
+  font-size: 10px;
+  transition: top 150ms ease-out;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ===========================================================================
+   5. SCENE
+   One tall container. The sky gradient spans its full height, so the colours
+   progress as you descend rather than repeating per viewport. The ground is
+   pinned to the bottom, which puts the horizon at roughly 85% of the page.
+   =========================================================================== */
+
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  padding-bottom: calc(var(--ground-height) + 40px);
+  background-image: linear-gradient(
+    180deg,
+    var(--sky-0) 0%,
+    var(--sky-1) 12.5%,
+    var(--sky-2) 25%,
+    var(--sky-3) 37.5%,
+    var(--sky-4) 50%,
+    var(--sky-5) 62.5%,
+    var(--sky-6) 75%,
+    var(--sky-7) 87.5%,
+    var(--sky-8) 100%
+  );
+}
+
+/* Banded retro texture: 2px repeating lines at very low opacity. */
+.dither {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--dither-color) 3.5%, transparent) 0 2px,
+      transparent 2px 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dither-color) 2.5%, transparent) 0 2px,
+      transparent 2px 4px
+    );
+}
+
+.sky-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===========================================================================
+   6. PIXEL SPRITES
+   Each sprite is a pixel map compressed into one absolutely-positioned block
+   per horizontal run, which is how the mockups are built. A 16x16 sun is ~40
+   elements instead of 256.
+   =========================================================================== */
+
+.sprite {
+  position: absolute;
+  display: block;
+}
+
+.sprite > i {
+  position: absolute;
+  display: block;
+}
+
+/* --- Sun / moon ---------------------------------------------------------- */
+
+.celestial {
+  position: absolute;
+  top: var(--celestial-top);
+  left: var(--celestial-left);
+  width: calc(16 * var(--celestial-unit) * var(--px-scale));
+  height: calc(16 * var(--celestial-unit) * var(--px-scale));
+  z-index: 2;
+  /* Parallax offset, written by JS as a plain number of pixels. */
+  transform: translate3d(0, var(--parallax, 0px), 0);
+  will-change: transform;
+}
+
+.celestial-glow {
+  position: absolute;
+  left: -50%;
+  top: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--celestial-glow) 0%, transparent 62%);
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+.celestial-sprite {
+  position: absolute;
+  inset: 0;
+}
+.celestial-sprite--sun {
+  opacity: var(--sun-opacity);
+}
+.celestial-sprite--moon {
+  opacity: var(--moon-opacity);
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* --- Stars --------------------------------------------------------------- */
+
+/* A 4-point tapered sparkle: vertical bar, horizontal bar, 3x3 centre block. */
+.sparkle {
+  position: absolute;
+  opacity: calc(var(--star-opacity) * var(--own-opacity, 1));
+  will-change: transform, opacity;
+}
+
+.sparkle i {
+  position: absolute;
+  display: block;
+  background: var(--star-color);
+}
+
+.sparkle .bar-v {
+  left: calc(3 * var(--u));
+  top: 0;
+  width: var(--u);
+  height: calc(7 * var(--u));
+}
+.sparkle .bar-h {
+  left: 0;
+  top: calc(3 * var(--u));
+  width: calc(7 * var(--u));
+  height: var(--u);
+}
+.sparkle .core {
+  left: calc(2 * var(--u));
+  top: calc(2 * var(--u));
+  width: calc(3 * var(--u));
+  height: calc(3 * var(--u));
+  box-shadow: 0 0 calc(4 * var(--u)) var(--star-color);
+}
+
+/* Only a subset twinkles — a fully twinkling sky is noise. */
+.sparkle--twinkle {
+  animation: twinkle var(--dur) ease-in-out var(--delay) infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: calc(var(--star-opacity) * var(--own-opacity, 1));
+    transform: scale(1);
+  }
+  50% {
+    opacity: calc(var(--star-opacity) * var(--own-opacity, 1) * 0.35);
+    transform: scale(0.88);
+  }
+}
+
+.dot {
+  position: absolute;
+  display: block;
+  background: var(--star-color);
+  opacity: calc(var(--dot-opacity) * var(--own-opacity, 1));
+}
+
+.dot--twinkle {
+  animation: twinkle-dot var(--dur) ease-in-out var(--delay) infinite;
+}
+
+@keyframes twinkle-dot {
+  0%,
+  100% {
+    opacity: calc(var(--dot-opacity) * var(--own-opacity, 1));
+  }
+  50% {
+    opacity: calc(var(--dot-opacity) * var(--own-opacity, 1) * 0.3);
+  }
+}
+
+/* --- Shooting stars ------------------------------------------------------ */
+
+.shooting-star {
+  position: absolute;
+  height: 4px;
+  transform-origin: 0 50%;
+  animation: shoot var(--dur) linear forwards;
+  will-change: transform, opacity;
+}
+
+/* Tapering trail behind a bright head pixel. */
+.shooting-star .trail {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--star-color));
+}
+
+.shooting-star .head {
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  box-shadow: 0 0 12px var(--star-color);
+}
+
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translate3d(0, 0, 0) scaleX(0.2);
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translate3d(var(--distance), 0, 0) scaleX(1);
+  }
+}
+
+/* --- Clouds -------------------------------------------------------------- */
+
+/* Each band scrolls a track holding two copies of the same cloud run, so the
+   -50% translate lands exactly where it started: a seamless wrap, no pop. */
+.cloud-band {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.cloud-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 0;
+  animation: drift var(--dur) linear infinite;
+  will-change: transform;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.cloud {
+  position: absolute;
+  /* --depth is 0 high in the sky, 1 near the horizon. At night the bias is 0,
+     which hides the high clouds entirely; in daylight it is 1 and they all
+     show at full strength. */
+  opacity: calc(
+    var(--cloud-opacity) * var(--own-opacity, 1) *
+      (var(--cloud-depth-bias) + (1 - var(--cloud-depth-bias)) * var(--depth))
+  );
+}
+
+.cloud i {
+  position: absolute;
+  display: block;
+}
+.cloud .lit {
+  background: var(--cloud-lit);
+}
+.cloud .shade {
+  background: var(--cloud-shade);
+}
+
+/* ===========================================================================
+   7. GROUND
+   The horizon you scroll down to reach: stepped ridge silhouettes, a pixel
+   treeline, grass, and a dirt path running off the bottom of the page.
+   =========================================================================== */
+
+.ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--ground-height);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Jagged stepped silhouettes. The clip-path is generated as percentages so it
+   keeps its shape at any viewport width. */
+.ridge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+.ridge--1 {
+  background: var(--ridge-1);
+  opacity: var(--ridge-1-opacity);
+}
+.ridge--2 {
+  background: var(--ridge-2);
+  opacity: var(--ridge-2-opacity);
+}
+.ridge--3 {
+  background: var(--ridge-3);
+  opacity: var(--ridge-3-opacity);
+}
+
+.treeline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+
+.tree {
+  position: absolute;
+  bottom: 0;
+}
+.tree i {
+  position: absolute;
+  display: block;
+}
+.tree .dark {
+  background: var(--tree-dark);
+}
+.tree .mid {
+  background: var(--tree-mid);
+}
+
+.grass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--grass);
+}
+
+.grass-lip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 8px;
+  background: var(--grass-top);
+}
+
+.grass-speck {
+  position: absolute;
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: var(--grass-speckle);
+}
+
+/* A dirt path narrowing toward the horizon, with stepped pixel edges. */
+.path,
+.path-lip {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  top: 8px;
+  width: min(420px, 52vw);
+  transform: translateX(-50%);
+}
+.path {
+  background: var(--path);
+}
+/* Drawn behind, slightly wider, so it shows only as a rim down both sides. */
+.path-lip {
+  background: var(--path-edge);
+}
+
+/* ===========================================================================
+   8. CONTENT LAYOUT
+   Panels float in the sky, alternating left and right as you descend. Generous
+   vertical gaps keep the sky dominant — the ground is somewhere you arrive at,
+   not something that's always in frame.
+   =========================================================================== */
+
+.content {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 80px);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: min(100vh, 860px);
+  padding-top: 8vh;
+  text-align: center;
+}
+
+.hero-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(32px, 8vw, 46px);
+  line-height: 1.1;
+  color: #fff;
+  letter-spacing: 0.02em;
+  margin: 0;
+  /* Hard pixel outline on all eight sides, plus a themed halo. Sized in em so
+     it stays proportional: a fixed 3px outline bridges the letter gaps once the
+     type scales down, turning each word into a solid block. */
+  --outline: max(2px, 0.065em);
+  text-shadow:
+    var(--outline) var(--outline) 0 var(--title-outline),
+    calc(-1 * var(--outline)) var(--outline) 0 var(--title-outline),
+    var(--outline) calc(-1 * var(--outline)) 0 var(--title-outline),
+    calc(-1 * var(--outline)) calc(-1 * var(--outline)) 0 var(--title-outline),
+    var(--outline) 0 0 var(--title-outline),
+    calc(-1 * var(--outline)) 0 0 var(--title-outline),
+    0 var(--outline) 0 var(--title-outline),
+    0 calc(-1 * var(--outline)) 0 var(--title-outline),
+    0 0 30px var(--title-glow);
+}
+
+.hero-tagline {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(9px, 2vw, 12px);
+  line-height: 1.8;
+  color: #fff;
+  letter-spacing: 0.14em;
+  margin: 40px 0 0;
+  /* The tagline is small and widely tracked, so its outline has to be thinner
+     still or the shadows merge across the letter spacing. */
+  --outline: max(1px, 0.09em);
+  text-shadow:
+    var(--outline) var(--outline) 0 var(--title-outline),
+    calc(-1 * var(--outline)) var(--outline) 0 var(--title-outline),
+    var(--outline) calc(-1 * var(--outline)) 0 var(--title-outline),
+    calc(-1 * var(--outline)) calc(-1 * var(--outline)) 0 var(--title-outline),
+    var(--outline) 0 0 var(--title-outline),
+    calc(-1 * var(--outline)) 0 0 var(--title-outline),
+    0 var(--outline) 0 var(--title-outline),
+    0 calc(-1 * var(--outline)) 0 var(--title-outline),
+    0 0 24px var(--title-glow);
+}
+
+.hero-hint {
+  margin-top: 64px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #fff;
+  opacity: 0.85;
+  text-shadow: 1px 1px 0 var(--title-outline);
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  /* The wide gap is the point: you descend through open sky between panels. */
+  gap: clamp(180px, 26vh, 320px);
+  padding-bottom: clamp(160px, 22vh, 300px);
+}
+
+.section-row {
+  display: flex;
+}
+.section-row--left {
+  justify-content: flex-start;
+}
+.section-row--right {
+  justify-content: flex-end;
+}
+
+/* ===========================================================================
+   9. PANELS
+   Floating pixel dialog boxes: thick border, inner highlight border, sharp
+   corners.
+   =========================================================================== */
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  padding: 28px 32px;
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / var(--panel-alpha));
+  border: 4px solid var(--panel-border);
+  box-shadow:
+    inset 0 0 0 2px var(--panel-inner),
+    0 var(--panel-drop-y) 0 var(--panel-glow),
+    0 0 var(--panel-glow-size) var(--panel-glow);
+  color: var(--panel-text);
+  /* Recessed by default; --panel-alpha is the only thing that moves, so text
+     contrast is identical in every state. No layout shift: the lift is a
+     transform. */
+  --panel-alpha: 0.88;
+  transform: translate3d(0, 0, 0);
+  transition:
+    --panel-alpha 200ms ease-out,
+    --panel-glow-size 200ms ease-out,
+    transform 200ms ease-out,
+    filter 200ms ease-out;
+  filter: saturate(0.92);
+  will-change: transform;
+}
+
+.panel p {
+  font-size: 15px;
+  line-height: 1.8;
+  margin: 0 0 14px;
+}
+.panel p:last-child {
+  margin-bottom: 0;
+}
+
+.panel ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.panel li + li {
+  margin-top: 6px;
+}
+
+.panel-heading {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(11px, 2.4vw, 13px);
+  line-height: 1.6;
+  color: var(--accent);
+  margin: 0 0 18px;
+}
+
+.panel-subheading {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.panel-meta {
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0 0 12px;
+}
+
+.tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.cta {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  color: var(--accent);
+  border: 3px solid var(--accent);
+  display: inline-block;
+  padding: 14px 22px;
+  margin-top: 22px;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+.cta:hover,
+.cta:focus-visible {
+  background: var(--accent);
+  color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+}
+
+.contact-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-list a {
+  color: var(--panel-text);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.contact-list a:hover {
+  color: var(--accent);
+}
+
+.contact-label {
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  color: var(--accent);
+  margin-right: 10px;
+}
+
+.project + .project {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 2px solid var(--panel-inner);
+}
+
+.project-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* --- Hover to focus ------------------------------------------------------ */
+/* Focused panel sharpens and lifts; siblings recede. The recede is a
+   background-alpha change, never an opacity change on the text. */
+
+@media (hover: hover) {
+  .sections:has(.panel:hover) .panel,
+  .sections:has(.panel:focus-within) .panel {
+    --panel-alpha: 0.8;
+    filter: saturate(0.82);
+  }
+
+  .panel:hover,
+  .panel:focus-within {
+    --panel-alpha: 0.95 !important;
+    --panel-glow-size: 44px;
+    filter: saturate(1) !important;
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/* Touch: no dim at all. IntersectionObserver marks whichever panel is centred
+   in the viewport, and that one gets the focus treatment. */
+@media (hover: none) {
+  .panel {
+    --panel-alpha: 0.92;
+    filter: none;
+  }
+  .panel[data-centered='true'] {
+    --panel-alpha: 0.95;
+    --panel-glow-size: 44px;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+/* ===========================================================================
+   10. THEME TOGGLE
+   =========================================================================== */
+
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / 0.9);
+  border: 3px solid var(--panel-border);
+  box-shadow: inset 0 0 0 2px var(--panel-inner);
+  color: var(--accent);
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.theme-toggle:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow:
+    inset 0 0 0 2px var(--panel-inner),
+    0 0 20px var(--panel-glow);
+}
+
+.theme-toggle-icon {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.theme-toggle-icon i {
+  position: absolute;
+  display: block;
+}
+
+.theme-toggle-label {
+  min-width: 7ch;
+  text-align: left;
+}
+
+.theme-toggle-mode {
+  opacity: 0.6;
+  font-size: 7px;
+}
+
+/* ===========================================================================
+   11. FOOTER
+   =========================================================================== */
+
+.site-footer {
+  position: relative;
+  z-index: 4;
+  padding: 0 clamp(16px, 4vw, 80px) 28px;
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--footer-text);
+}
+
+/* ===========================================================================
+   12. PAUSED / REDUCED MOTION
+   =========================================================================== */
+
+/* Nothing animates while the tab is in the background. */
+html[data-paused='true'] *,
+html[data-paused='true'] *::before,
+html[data-paused='true'] *::after {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* A static scene: no twinkle, no drift, no parallax, no glow pulse, no lift.
+     Theme changes become an instant swap. */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html[data-theme-transitions='on'] {
+    transition: none !important;
+  }
+
+  .celestial {
+    transform: none !important;
+  }
+
+  .panel:hover,
+  .panel:focus-within,
+  .panel[data-centered='true'],
+  .theme-toggle:hover {
+    transform: none !important;
+  }
+
+  /* Hover still reads, just without motion. */
+  .panel:hover,
+  .panel:focus-within {
+    --panel-alpha: 0.95 !important;
+  }
+}
+
+.theme-toggle-wrap {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.theme-toggle-wrap > * {
+  pointer-events: auto;
+}
+
+.theme-toggle {
+  position: static;
+  top: auto;
+  right: auto;
+}
+
+.theme-reset {
+  padding: 7px 9px;
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / 0.9);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-pixel), monospace;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.theme-reset:hover {
+  background: var(--accent);
+  color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+}
+
+@media (max-width: 480px) {
+  /* Press Start 2P has no narrow cut, so the only levers on a phone are size
+     and tracking. Both, slightly, keeps the tagline off the gutters. */
+  .hero-tagline {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 640px) {
+  .theme-toggle-wrap {
+    padding: 12px;
+  }
+  .theme-toggle {
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+}
