@@ -137,10 +137,12 @@ moos.
 
 - **Sprites** ([`src/lib/cow.ts`](src/lib/cow.ts)) are generated at module load
   from a declared silhouette; the dark outline is derived from it, so it can
-  never end up with a gap. Draw order matters: legs go down _after_ the body is
-  outlined (outlining them too fuses neighbouring legs into one block), and the
-  grazing head is put back on top afterwards, because a lowered head passes in
-  front of the forelegs.
+  never end up with a gap. She is deliberately chunky — an oversized head, horn
+  nubs, a big pink snout and short stubby legs — and is authored facing left,
+  then mirrored with `scaleX` to walk the other way. The legs are part of the
+  silhouette, which is what gives them the same pale hide and dark edge as the
+  rest of her. The walk lifts diagonal pairs with no horizontal swing: at three
+  pixels wide, a leg that slides sideways reads as a broken leg, not a stride.
 - **The moo** ([`src/lib/moo.ts`](src/lib/moo.ts)) is synthesised with the Web
   Audio API rather than shipped as an audio file — no bytes, no licence, works
   offline. It is a sawtooth with a rising-then-falling pitch envelope through
