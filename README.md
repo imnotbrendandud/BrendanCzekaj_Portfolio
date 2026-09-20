@@ -129,6 +129,37 @@ visibility, so it moves into evening on its own.
 
 ---
 
+## The cow
+
+A cow grazes in the field at the bottom. She wanders left and right, stops to
+crop the grass for a while, then moves on — and if you click or tap her, she
+moos.
+
+- **Sprites** ([`src/lib/cow.ts`](src/lib/cow.ts)) are generated at module load
+  from a declared silhouette; the dark outline is derived from it, so it can
+  never end up with a gap. Draw order matters: legs go down _after_ the body is
+  outlined (outlining them too fuses neighbouring legs into one block), and the
+  grazing head is put back on top afterwards, because a lowered head passes in
+  front of the forelegs.
+- **The moo** ([`src/lib/moo.ts`](src/lib/moo.ts)) is synthesised with the Web
+  Audio API rather than shipped as an audio file — no bytes, no licence, works
+  offline. It is a sawtooth with a rising-then-falling pitch envelope through
+  two bandpass "formant" filters. Browsers block audio until the user
+  interacts, so the `AudioContext` is created on the first click, not at import.
+- Clicking also pops a **"Moooo" speech bubble**, so the feedback still lands
+  with the sound off or muted. It is an `aria-live` region, and the cow is a
+  real `<button>` with a label — she lives outside the `aria-hidden` scenery so
+  that focusing her is valid.
+- Under `prefers-reduced-motion` she stands still and does not wander, but
+  remains clickable.
+
+To change how far she roams or how long she grazes, see the constants at the
+top of [`src/components/scene/Cow.tsx`](src/components/scene/Cow.tsx)
+(`WALK_MS`, `GRAZE_MS`, `WALK_SPEED`, `EDGE_MARGIN`). Her size is the
+`--cow-px` custom property in `globals.css`.
+
+---
+
 ## Accessibility
 
 - **Contrast.** Every theme was measured rather than eyeballed. Panel text and accent text
@@ -217,10 +248,13 @@ src/
       CelestialBody.tsx Sun/moon, scroll parallax clamped at the horizon
       ShootingStars.tsx Randomly spawned meteors, per-theme rate
       Ground.tsx        Ridges, treeline, grass, dirt path
+      Cow.tsx           Grazing cow: walk/graze state machine, click to moo
   content/portfolio.ts  All copy
   lib/
     theme.ts            Theme types + time schedule
     pixel.ts            Pixel maps (sun, moon, clouds, trees)
+    cow.ts              Cow sprite frames (walk cycle, grazing, chew)
+    moo.ts              Web Audio moo synthesis
     prng.ts             Seeded RNG for deterministic scene generation
 scripts/generate-og.mjs Open Graph image renderer
 ```

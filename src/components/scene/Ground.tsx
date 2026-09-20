@@ -1,3 +1,4 @@
+import { Cow } from './Cow';
 import { createRng, type Rng } from '@/lib/prng';
 import { TREES, mapWidth } from '@/lib/pixel';
 import { PixelSprite } from './PixelSprite';
@@ -98,63 +99,70 @@ const PATH_LIP_CLIP =
 
 export function Ground() {
   return (
-    <div className="ground" aria-hidden="true">
-      {scene.ridges.map((ridge, i) => (
-        <div
-          key={i}
-          className={ridge.className}
-          style={{ top: `${ridge.top}%`, height: `${ridge.height}%`, clipPath: ridge.clip }}
-        />
-      ))}
-
-      {/* The treeline sits on the grass line, tucked behind the grass lip. */}
-      <div
-        className="treeline"
-        style={{ top: `${LAYOUT.treeline.top}%`, height: `${LAYOUT.treeline.height}%` }}
-      >
-        {scene.trees.map((tree, i) => {
-          const map = TREES[tree.mapIndex]!;
-          const unit = `calc(${tree.scale.toFixed(2)}px * var(--px-scale))`;
-          return (
-            <div
-              key={i}
-              className="tree"
-              style={{
-                left: `${tree.left}%`,
-                width: `calc(${mapWidth(map)} * ${unit})`,
-                height: `calc(${map.length} * ${unit})`,
-                zIndex: tree.z,
-              }}
-            >
-              <PixelSprite
-                map={map}
-                unit={unit}
-                palette={{ d: 'var(--tree-dark)', m: 'var(--tree-mid)' }}
-                style={{ position: 'relative' }}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grass" style={{ top: `${LAYOUT.grass.top}%` }}>
-        <div className="grass-lip" />
-
-        <div className="path-lip" style={{ clipPath: PATH_LIP_CLIP }} />
-        <div className="path" style={{ clipPath: PATH_CLIP }} />
-
-        {scene.specks.map((speck, i) => (
-          <span
+    <>
+      <div className="ground" aria-hidden="true">
+        {scene.ridges.map((ridge, i) => (
+          <div
             key={i}
-            className="grass-speck"
-            style={{
-              left: `calc(${speck.left}% + ${speck.dim ? 4 : 0}px)`,
-              top: `calc(${speck.top}% + ${speck.dim ? 4 : 0}px)`,
-              opacity: speck.dim ? 0.4 : 0.55,
-            }}
+            className={ridge.className}
+            style={{ top: `${ridge.top}%`, height: `${ridge.height}%`, clipPath: ridge.clip }}
           />
         ))}
+
+        {/* The treeline sits on the grass line, tucked behind the grass lip. */}
+        <div
+          className="treeline"
+          style={{ top: `${LAYOUT.treeline.top}%`, height: `${LAYOUT.treeline.height}%` }}
+        >
+          {scene.trees.map((tree, i) => {
+            const map = TREES[tree.mapIndex]!;
+            const unit = `calc(${tree.scale.toFixed(2)}px * var(--px-scale))`;
+            return (
+              <div
+                key={i}
+                className="tree"
+                style={{
+                  left: `${tree.left}%`,
+                  width: `calc(${mapWidth(map)} * ${unit})`,
+                  height: `calc(${map.length} * ${unit})`,
+                  zIndex: tree.z,
+                }}
+              >
+                <PixelSprite
+                  map={map}
+                  unit={unit}
+                  palette={{ d: 'var(--tree-dark)', m: 'var(--tree-mid)' }}
+                  style={{ position: 'relative' }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grass" style={{ top: `${LAYOUT.grass.top}%` }}>
+          <div className="grass-lip" />
+
+          {/* Speckle is scattered across the whole field, so it has to be laid
+              down before the path — otherwise tufts of grass sprout through the
+              dirt. */}
+          {scene.specks.map((speck, i) => (
+            <span
+              key={i}
+              className="grass-speck"
+              style={{
+                left: `calc(${speck.left}% + ${speck.dim ? 4 : 0}px)`,
+                top: `calc(${speck.top}% + ${speck.dim ? 4 : 0}px)`,
+                opacity: speck.dim ? 0.4 : 0.55,
+              }}
+            />
+          ))}
+
+          <div className="path-lip" style={{ clipPath: PATH_LIP_CLIP }} />
+          <div className="path" style={{ clipPath: PATH_CLIP }} />
+        </div>
       </div>
-    </div>
+
+      <Cow />
+    </>
   );
 }

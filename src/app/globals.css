@@ -259,6 +259,34 @@
   initial-value: #42353c;
 }
 
+/* The cow grazing at the bottom. She picks up the light like everything else,
+   so she's washed out at midday and cold and dim under moonlight. */
+@property --cow-hide {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #b8b0c8;
+}
+@property --cow-patch {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #241c38;
+}
+@property --cow-outline {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #120e1c;
+}
+@property --cow-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #a06878;
+}
+@property --cow-eye {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #120e1c;
+}
+
 /* Panels. The dim/focus effect moves --panel-alpha, never the element's own
    opacity: fading a whole panel bleeds the sky through its text and drops
    contrast below WCAG AA (measured: accent text hits 2.69:1 at 0.6 opacity).
@@ -419,6 +447,11 @@
   --title-outline: #4a2a4a;
   --title-glow: rgba(255, 201, 153, 0.6);
   --footer-text: #3a2038;
+  --cow-hide: #f5ebe0;
+  --cow-patch: #4a3a45;
+  --cow-outline: #2a1f28;
+  --cow-pink: #e8a0a8;
+  --cow-eye: #2a1f28;
 }
 
 [data-theme='day'] {
@@ -491,6 +524,11 @@
   --title-outline: #1c4470;
   --title-glow: rgba(255, 244, 192, 0);
   --footer-text: #12304f;
+  --cow-hide: #ffffff;
+  --cow-patch: #2b2b33;
+  --cow-outline: #1a1a20;
+  --cow-pink: #f0a8b0;
+  --cow-eye: #1a1a20;
 }
 
 [data-theme='evening'] {
@@ -561,6 +599,11 @@
   --title-outline: #3d1c5c;
   --title-glow: rgba(255, 179, 221, 0.6);
   --footer-text: #2a1240;
+  --cow-hide: #e6d2de;
+  --cow-patch: #3d2a45;
+  --cow-outline: #241628;
+  --cow-pink: #dd97ad;
+  --cow-eye: #241628;
 }
 
 [data-theme='night'] {
@@ -630,6 +673,11 @@
   --title-outline: #1a0f3d;
   --title-glow: rgba(168, 148, 255, 0.7);
   --footer-text: #e8e4ff;
+  --cow-hide: #b8b0c8;
+  --cow-patch: #241c38;
+  --cow-outline: #120e1c;
+  --cow-pink: #a06878;
+  --cow-eye: #120e1c;
 }
 
 /* ===========================================================================
@@ -697,7 +745,12 @@ html[data-theme-transitions='on'] {
     --accent 2s ease,
     --title-outline 2s ease,
     --title-glow 2s ease,
-    --footer-text 2s ease;
+    --footer-text 2s ease,
+    --cow-hide 2s ease,
+    --cow-patch 2s ease,
+    --cow-outline 2s ease,
+    --cow-pink 2s ease,
+    --cow-eye 2s ease;
 }
 
 /* ===========================================================================
@@ -1638,5 +1691,100 @@ html[data-paused='true'] *::after {
   .theme-toggle {
     font-size: 8px;
     padding: 8px 10px;
+  }
+}
+
+/* ===========================================================================
+   13. THE COW
+   Wanders the field, stops to graze, and moos when you click her.
+   =========================================================================== */
+
+.cow {
+  --cow-px: 4px;
+  /* Written by JS in pixels, measured against the field width. */
+  --cow-x: 30px;
+  --cow-flip: 1;
+  position: absolute;
+  left: 0;
+  /* Standing in the grass, which is the lower part of the ground band. */
+  bottom: calc(var(--ground-height) * 0.14);
+  z-index: 3;
+  /* Position is a transform, never `left`, so walking stays on the compositor. */
+  transform: translate3d(var(--cow-x), 0, 0);
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.cow-button {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  /* The sprite faces right; flip it to walk the other way. */
+  transform: scaleX(var(--cow-flip));
+  transform-origin: center bottom;
+}
+
+.cow-sprite {
+  position: relative;
+  display: block;
+  width: calc(32 * var(--cow-px));
+  height: calc(20 * var(--cow-px));
+}
+
+.cow-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.cow-frame i {
+  position: absolute;
+  display: block;
+}
+
+.cow-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Speech bubble, so the moo registers with sound off too. Centred over the
+   cow rather than offset to one side, so it reads the same whichever way she
+   happens to be facing. It sits outside the flipped button, so the text is
+   never mirrored. */
+.cow-moo {
+  position: absolute;
+  left: calc(16 * var(--cow-px));
+  bottom: calc(20 * var(--cow-px));
+  padding: 6px 8px;
+  background: var(--cow-hide);
+  color: var(--cow-outline);
+  border: 2px solid var(--cow-outline);
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate3d(-50%, 4px, 0);
+  transition:
+    opacity 140ms ease-out,
+    transform 140ms ease-out;
+  pointer-events: none;
+}
+
+.cow-moo[data-visible='true'] {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+}
+
+@media (max-width: 680px) {
+  .cow {
+    --cow-px: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cow-moo {
+    transition: none;
   }
 }
