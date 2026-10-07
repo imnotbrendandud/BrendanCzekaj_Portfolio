@@ -407,9 +407,10 @@
   --cloud-opacity: 0.93;
   --cloud-depth-bias: 1;
 
-  /* A rising sun, low on the horizon. */
-  --celestial-top: 82.9%;
-  --celestial-left: 48.6%;
+  /* A rising sun, low on the eastern (left) horizon. Kept off-centre so the
+     window doesn't cover it. */
+  --celestial-top: 50%;
+  --celestial-left: 8%;
   --celestial-unit: 9px;
   --celestial-glow: rgba(255, 210, 140, 0.45);
   --sun-opacity: 1;
@@ -561,9 +562,9 @@
   --cloud-opacity: 0.92;
   --cloud-depth-bias: 1;
 
-  /* A setting sun, low on the horizon. */
-  --celestial-top: 78.8%;
-  --celestial-left: 41.7%;
+  /* A setting sun, low on the western (right) horizon, clear of the window. */
+  --celestial-top: 52%;
+  --celestial-left: 84%;
   --celestial-unit: 9px;
   --celestial-glow: rgba(255, 200, 120, 0.42);
   --sun-opacity: 1;
@@ -772,9 +773,9 @@ html[data-theme-transitions='on'] {
 html {
   background: var(--sky-0);
   scroll-behavior: smooth;
-  /* Height of the ground band. The scene reserves this much room at its bottom
-     so content never lands on the grass. */
-  --ground-height: 520px;
+  /* Height of the ground band. It tracks the viewport height because the whole
+     site is one screen: a fixed 520px would eat half a laptop display. */
+  --ground-height: clamp(220px, 34vh, 520px);
   /* Sprites are authored at desktop size; this shrinks the whole pixel grid on
      narrow screens so a 128px sun doesn't eat a third of a phone. */
   --px-scale: 1;
@@ -782,14 +783,14 @@ html {
 
 @media (max-width: 1024px) {
   html {
-    --ground-height: 440px;
+    --ground-height: clamp(200px, 32vh, 440px);
     --px-scale: 0.78;
   }
 }
 
 @media (max-width: 680px) {
   html {
-    --ground-height: 340px;
+    --ground-height: clamp(170px, 28vh, 340px);
     --px-scale: 0.55;
   }
 }
@@ -839,17 +840,24 @@ video {
 
 /* ===========================================================================
    5. SCENE
-   One tall container. The sky gradient spans its full height, so the colours
-   progress as you descend rather than repeating per viewport. The ground is
-   pinned to the bottom, which puts the horizon at roughly 85% of the page.
+   Exactly one screen: title at the top, the tabbed window in the middle, and
+   the ground pinned to the bottom so the horizon is always in frame. The
+   window may overlap the far ridges but stops above the treeline, leaving the
+   field and the cow clear.
    =========================================================================== */
 
 .scene {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  /* Below this the window gets too short to read, so let the page scroll
+     instead (landscape phones, mostly). */
+  min-height: 560px;
   overflow: hidden;
-  padding-bottom: calc(var(--ground-height) + 40px);
+  padding-bottom: calc(var(--ground-height) * 0.56);
   background-image: linear-gradient(
     180deg,
     var(--sky-0) 0%,
@@ -883,9 +891,14 @@ video {
     );
 }
 
+/* Stars, clouds and meteors are positioned as percentages of this layer, which
+   stops where the ground begins. The ridges are partly transparent in every
+   theme but night, so anything that strayed behind them would show through as
+   pale streaks across the mountains. The clip catches a meteor that runs long. */
 .sky-layer {
   position: absolute;
-  inset: 0;
+  inset: 0 0 var(--ground-height);
+  overflow: hidden;
   pointer-events: none;
   z-index: 1;
 }
@@ -1226,9 +1239,8 @@ video {
 
 /* ===========================================================================
    8. CONTENT LAYOUT
-   Panels float in the sky, alternating left and right as you descend. Generous
-   vertical gaps keep the sky dominant — the ground is somewhere you arrive at,
-   not something that's always in frame.
+   The title sits at the top and the window takes whatever height is left, so
+   the layout fits any screen without the page itself scrolling.
    =========================================================================== */
 
 .content {
@@ -1241,13 +1253,25 @@ video {
 }
 
 .hero {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: min(100vh, 860px);
-  padding-top: 8vh;
+  /* Clears the fixed theme toggle on narrow screens. */
+  padding-top: clamp(60px, 7vh, 100px);
   text-align: center;
+}
+
+.stage {
+  flex: 1;
+  /* Lets the window shrink below its content height; it scrolls inside. */
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  /* Floats mid-sky when there's room to spare. */
+  align-items: center;
+  padding-top: clamp(16px, 3vh, 40px);
+  padding-bottom: clamp(12px, 2vh, 24px);
 }
 
 .hero-title {
@@ -1279,7 +1303,7 @@ video {
   line-height: 1.8;
   color: #fff;
   letter-spacing: 0.14em;
-  margin: 40px 0 0;
+  margin: clamp(16px, 3vh, 32px) 0 0;
   /* The tagline is small and widely tracked, so its outline has to be thinner
      still or the shadows merge across the letter spacing. */
   --outline: max(1px, 0.09em);
@@ -1295,56 +1319,87 @@ video {
     0 0 24px var(--title-glow);
 }
 
-.hero-hint {
-  margin-top: 64px;
+/* Résumé, LinkedIn, GitHub, email: buttons under the title, so the links a
+   recruiter wants never need a click to find. */
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: clamp(14px, 2.5vh, 24px);
+}
+
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 10px;
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / 0.92);
+  border: 3px solid var(--panel-border);
+  box-shadow:
+    inset 0 0 0 2px var(--panel-inner),
+    0 var(--panel-drop-y) 0 var(--panel-glow);
+  color: var(--accent);
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
-  letter-spacing: 0.2em;
-  color: #fff;
-  opacity: 0.85;
-  text-shadow: 1px 1px 0 var(--title-outline);
-  animation: bob 2.4s ease-in-out infinite;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 120ms ease-out;
+}
+.hero-link:hover,
+.hero-link:focus-visible {
+  background: var(--accent);
+  color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+  transform: translate3d(0, -2px, 0);
 }
 
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0);
+/* A pixel icon at 2px per pixel, sized from its map (see src/lib/icons.ts).
+   It inherits the link's colour, so it inverts with the text on hover. */
+.hero-link-icon {
+  position: relative;
+  flex: none;
+}
+
+@media (max-width: 480px) {
+  /* The full name wraps to two lines here, so leave a little more room under
+     the fixed EDIT and theme buttons. */
+  .hero {
+    padding-top: 76px;
   }
-  50% {
-    transform: translateY(6px);
+  .hero-links {
+    gap: 8px;
+  }
+  .hero-link {
+    gap: 6px;
+    padding: 6px 9px 6px 7px;
+    font-size: 8px;
   }
 }
 
-.sections {
-  display: flex;
-  flex-direction: column;
-  /* The wide gap is the point: you descend through open sky between panels. */
-  gap: clamp(180px, 26vh, 320px);
-  padding-bottom: clamp(160px, 22vh, 300px);
-}
-
-.section-row {
-  display: flex;
-}
-.section-row--left {
-  justify-content: flex-start;
-}
-.section-row--right {
-  justify-content: flex-end;
+@media (prefers-reduced-motion: reduce) {
+  .hero-link:hover,
+  .hero-link:focus-visible {
+    transform: none;
+  }
 }
 
 /* ===========================================================================
    9. PANELS
-   Floating pixel dialog boxes: thick border, inner highlight border, sharp
-   corners.
+   One floating pixel dialog box with a row of tabs: thick border, inner
+   highlight border, sharp corners.
    =========================================================================== */
 
 .panel {
   position: relative;
   width: 100%;
-  max-width: 480px;
-  padding: 28px 32px;
+  /* Grows with the viewport, but stops at a comfortable line length. */
+  max-width: clamp(480px, 50vw, 720px);
+  /* Just enough to keep the inset highlight visible around the tabs. */
+  padding: 2px;
   background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / var(--panel-alpha));
   border: 4px solid var(--panel-border);
   box-shadow:
@@ -1352,66 +1407,204 @@ video {
     0 var(--panel-drop-y) 0 var(--panel-glow),
     0 0 var(--panel-glow-size) var(--panel-glow);
   color: var(--panel-text);
-  /* Recessed by default; --panel-alpha is the only thing that moves, so text
-     contrast is identical in every state. No layout shift: the lift is a
-     transform. */
-  --panel-alpha: 0.88;
-  transform: translate3d(0, 0, 0);
-  transition:
-    --panel-alpha 200ms ease-out,
-    --panel-glow-size 200ms ease-out,
-    transform 200ms ease-out,
-    filter 200ms ease-out;
-  filter: saturate(0.92);
-  will-change: transform;
+  /* Inside the 0.80–0.95 band that was verified AA in every theme. */
+  --panel-alpha: 0.92;
 }
 
-.panel p {
+.window {
+  display: flex;
+  flex-direction: column;
+  /* Never taller than the space between the title and the treeline. */
+  max-height: 100%;
+}
+
+.window-tabs {
+  flex: none;
+  display: grid;
+  /* --tab-count is set by TabbedWindow; the editor can add and remove tabs. */
+  grid-template-columns: repeat(var(--tab-count, 4), 1fr);
+  border-bottom: 4px solid var(--panel-border);
+}
+
+.window-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-family: var(--font-pixel), monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+.window-tab + .window-tab {
+  border-left: 2px solid var(--panel-inner);
+}
+.window-tab:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+/* The selected tab is a solid block, like a highlighted menu item. */
+.window-tab[aria-selected='true'] {
+  background: var(--accent);
+  color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+}
+.window-tab:focus-visible {
+  outline-offset: -5px;
+}
+.window-tab[aria-selected='true']:focus-visible {
+  outline-color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+}
+
+.window-tab-num {
+  opacity: 0.7;
+}
+
+/* Long sections scroll inside the window; the page itself never does. */
+.window-body {
+  flex: 1;
+  min-height: 0;
+  /* Every panel shares one grid cell, so the body is as tall as the longest
+     section and the frame doesn't jump when you switch tabs. */
+  display: grid;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.window-body::-webkit-scrollbar {
+  width: 8px;
+}
+.window-body::-webkit-scrollbar-thumb {
+  background: var(--accent);
+}
+
+.window-panel {
+  grid-area: 1 / 1;
+  padding: 28px 32px;
+}
+/* Inactive panels keep their space but vanish, from the a11y tree and the tab
+   order too. `visibility` rather than `display: none`, so they still count
+   toward the shared cell's height. */
+.window-panel:not([data-active='true']) {
+  visibility: hidden;
+}
+.window-panel:focus-visible {
+  outline-offset: -6px;
+}
+
+@media (max-width: 520px) {
+  /* Up to three tabs fit across a phone once the numbers go. Four or more
+     don't in the pixel font, so those stack two to a row. */
+  .window-tab-num {
+    display: none;
+  }
+  .window-tab {
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+  .window-tabs[data-wrap] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .window-tabs[data-wrap] .window-tab:nth-child(odd) {
+    border-left: none;
+  }
+  .window-tabs[data-wrap] .window-tab:nth-child(n + 3) {
+    border-top: 2px solid var(--panel-inner);
+  }
+  .window-panel {
+    padding: 20px 20px;
+  }
+}
+
+/* --- Blocks --------------------------------------------------------------
+   Each tab is a column of blocks (see src/content/portfolio.ts). Styles hang
+   off block classes rather than bare p/ul selectors, so the editor can give a
+   block's field the same class and get the same look. */
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.blocks > *,
+.eblock-body > * {
+  margin: 0;
+}
+
+.block-heading {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(11px, 2.4vw, 13px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--accent);
+  /* A heading opens a section, so it gets more room above than below. */
+  margin-top: 4px;
+}
+
+.block-subheading {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+/* A subheading and the meta line under it read as one unit. */
+.blocks > .block-subheading + .block-meta {
+  margin-top: -10px;
+}
+
+.block-meta {
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.block-paragraph {
   font-size: 15px;
   line-height: 1.8;
-  margin: 0 0 14px;
-}
-.panel p:last-child {
-  margin-bottom: 0;
 }
 
-.panel ul {
-  margin: 0;
+.block-list {
   padding-left: 20px;
   font-size: 14px;
   line-height: 1.9;
 }
-.panel li + li {
+.block-list li + li {
   margin-top: 6px;
 }
 
-.panel-heading {
-  font-family: var(--font-pixel), monospace;
-  font-size: clamp(11px, 2.4vw, 13px);
-  line-height: 1.6;
-  color: var(--accent);
-  margin: 0 0 18px;
-}
-
-.panel-subheading {
-  font-size: 16px;
+/* Formatting inside copy. */
+.blocks strong {
   font-weight: 600;
-  margin: 0 0 4px;
 }
-
-.panel-meta {
-  font-size: 13px;
-  opacity: 0.85;
-  margin: 0 0 12px;
+.blocks mark {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: inherit;
+  padding: 0 2px;
+}
+.blocks a:not(.project-link) {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.blocks a:not(.project-link):hover {
+  color: var(--accent);
 }
 
 .tags {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 18px;
   padding: 0;
   list-style: none;
+}
+.blocks > .tags {
+  margin-top: 4px;
 }
 
 .tag {
@@ -1424,100 +1617,48 @@ video {
   white-space: nowrap;
 }
 
-.cta {
-  font-family: var(--font-pixel), monospace;
-  font-size: 12px;
-  color: var(--accent);
-  border: 3px solid var(--accent);
-  display: inline-block;
-  padding: 14px 22px;
-  margin-top: 22px;
-  text-decoration: none;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-.cta:hover,
-.cta:focus-visible {
-  background: var(--accent);
-  color: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
-}
-
-.contact-list {
-  list-style: none;
-  margin: 18px 0 0;
-  padding: 0;
+.block-contact {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 15px;
 }
-
-.contact-list a {
+.block-contact a,
+.contact-text {
   color: var(--panel-text);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
-.contact-list a:hover {
+.block-contact a:hover {
   color: var(--accent);
 }
 
 .contact-label {
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
+  text-transform: uppercase;
   color: var(--accent);
-  margin-right: 10px;
 }
 
-.project + .project {
-  margin-top: 28px;
-  padding-top: 28px;
+/* Separates one project or job from the next. Its margins plus the 14px gap
+   give 28px either side, as the layout had before blocks. */
+.block-divider {
+  height: 0;
+  border: 0;
   border-top: 2px solid var(--panel-inner);
+  margin-block: 14px;
 }
 
 .project-link {
   display: inline-block;
-  margin-top: 12px;
   font-family: var(--font-pixel), monospace;
   font-size: 9px;
+  line-height: 1.6;
   color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
-}
-
-/* --- Hover to focus ------------------------------------------------------ */
-/* Focused panel sharpens and lifts; siblings recede. The recede is a
-   background-alpha change, never an opacity change on the text. */
-
-@media (hover: hover) {
-  .sections:has(.panel:hover) .panel,
-  .sections:has(.panel:focus-within) .panel {
-    --panel-alpha: 0.8;
-    filter: saturate(0.82);
-  }
-
-  .panel:hover,
-  .panel:focus-within {
-    --panel-alpha: 0.95 !important;
-    --panel-glow-size: 44px;
-    filter: saturate(1) !important;
-    transform: translate3d(0, -6px, 0);
-  }
-}
-
-/* Touch: no dim at all. IntersectionObserver marks whichever panel is centred
-   in the viewport, and that one gets the focus treatment. */
-@media (hover: none) {
-  .panel {
-    --panel-alpha: 0.92;
-    filter: none;
-  }
-  .panel[data-centered='true'] {
-    --panel-alpha: 0.95;
-    --panel-glow-size: 44px;
-    transform: translate3d(0, -4px, 0);
-  }
 }
 
 /* ===========================================================================
@@ -1580,17 +1721,28 @@ video {
    11. FOOTER
    =========================================================================== */
 
+/* Lies in the grass at the bottom of the screen. */
 .site-footer {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 4;
-  padding: 0 clamp(16px, 4vw, 80px) 28px;
+  padding: 0 clamp(16px, 4vw, 80px) clamp(10px, 2vh, 20px);
   text-align: center;
+  pointer-events: none;
 }
 
-.site-footer p {
+.site-footer-note {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--footer-text);
+}
+
+@media (max-width: 680px) {
+  .site-footer-note {
+    font-size: 10px;
+  }
 }
 
 /* ===========================================================================
@@ -1626,17 +1778,8 @@ html[data-paused='true'] *::after {
     transform: none !important;
   }
 
-  .panel:hover,
-  .panel:focus-within,
-  .panel[data-centered='true'],
   .theme-toggle:hover {
     transform: none !important;
-  }
-
-  /* Hover still reads, just without motion. */
-  .panel:hover,
-  .panel:focus-within {
-    --panel-alpha: 0.95 !important;
   }
 }
 
@@ -1791,4 +1934,755 @@ html[data-paused='true'] *::after {
   .cow-moo {
     transition: none;
   }
+}
+
+/* ===========================================================================
+   14. BLOCK EDITOR (dev only)
+   The editor exists only under `npm run dev` (see src/components/editor), so
+   none of these selectors match anything on the live site.
+   =========================================================================== */
+
+html {
+  --editor-width: 312px;
+  --editor-solid: rgb(var(--panel-r) var(--panel-g) var(--panel-b));
+}
+
+/* Make room for the panel so it doesn't cover the window. */
+@media (min-width: 1000px) {
+  html[data-editor='open'] .scene {
+    padding-left: var(--editor-width);
+  }
+  html[data-editor='collapsed'] .scene {
+    padding-left: 56px;
+  }
+}
+
+.edit-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 50;
+  padding: 10px 12px;
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / 0.92);
+  border: 3px solid var(--panel-border);
+  box-shadow: inset 0 0 0 2px var(--panel-inner);
+  color: var(--accent);
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.edit-toggle:hover {
+  background: var(--accent);
+  color: var(--editor-solid);
+}
+
+/* --- Panel ---------------------------------------------------------------- */
+
+.editor-panel {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: var(--editor-width);
+  background: rgb(var(--panel-r) var(--panel-g) var(--panel-b) / 0.97);
+  border-right: 4px solid var(--panel-border);
+  box-shadow:
+    inset -2px 0 0 var(--panel-inner),
+    4px 0 24px rgb(0 0 0 / 0.18);
+  color: var(--panel-text);
+  font-size: 13px;
+}
+.editor-panel[data-collapsed='true'] {
+  width: 56px;
+}
+
+.editor-panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 2px solid var(--panel-inner);
+}
+.editor-panel[data-collapsed='true'] .editor-panel-head {
+  flex-direction: column;
+}
+
+.editor-panel-title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-pixel), monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.editor-status {
+  margin: 0;
+  padding: 4px 6px;
+  border: 2px solid currentColor;
+  font-family: var(--font-pixel), monospace;
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.editor-status[data-status='saving'] {
+  opacity: 0.7;
+}
+.editor-status[data-status='error'] {
+  color: #c0392b;
+  cursor: help;
+}
+
+.editor-error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 2px solid #c0392b;
+  color: #c0392b;
+  font-size: 12px;
+}
+
+.editor-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+
+/* Every button and field in the panel shares one pixel style. */
+.editor-panel button,
+.editor-panel input,
+.editor-panel textarea,
+.eblock-tools button,
+.eblock-tools select,
+.eblock-tools .eblock-type {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 2px solid var(--panel-inner);
+}
+.editor-panel button,
+.eblock-tools button,
+.eblock-tools select {
+  cursor: pointer;
+}
+.editor-panel button:hover:not(:disabled),
+.eblock-tools button:hover:not(:disabled),
+.eblock-tools select:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.editor-panel button:disabled,
+.eblock-tools button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.editor-panel [data-danger]:hover:not(:disabled),
+.eblock-tools [data-danger]:hover:not(:disabled) {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+.editor-icon-button {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 13px !important;
+  line-height: 1;
+}
+
+.editor-panel-actions {
+  display: flex;
+  gap: 6px;
+}
+.editor-panel-actions button {
+  flex: 1;
+  padding: 7px 4px;
+  font-size: 12px;
+}
+
+.editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.editor-section h3 {
+  margin: 0;
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.editor-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+
+.editor-add {
+  padding: 8px;
+  border-style: dashed !important;
+  font-size: 12px;
+}
+
+/* Palette */
+.palette {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.palette-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  font-size: 12px;
+  text-align: left;
+  cursor: grab !important;
+  touch-action: none;
+}
+.palette-chip[data-dragging='true'] {
+  opacity: 0.4;
+}
+.palette-icon {
+  flex: none;
+  width: 22px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  color: var(--accent);
+  text-align: center;
+}
+.palette-chip--overlay {
+  width: 140px;
+  background: var(--editor-solid);
+  border: 2px solid var(--accent);
+  color: var(--panel-text);
+  box-shadow: 4px 4px 0 var(--panel-glow);
+  cursor: grabbing;
+}
+
+/* Tabs */
+.editor-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.editor-tab {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 2px solid transparent;
+  background: var(--editor-solid);
+}
+.editor-tab[data-active='true'] {
+  border-color: var(--accent);
+}
+.editor-tab[data-dragging='true'] {
+  position: relative;
+  z-index: 1;
+  box-shadow: 4px 4px 0 var(--panel-glow);
+}
+.editor-tab input {
+  min-width: 0;
+  padding: 5px 6px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.editor-tab-num {
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  opacity: 0.6;
+}
+.editor-tab-hash {
+  grid-column: 3 / -1;
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.55;
+}
+.editor-confirm {
+  display: flex;
+  gap: 4px;
+  grid-column: 4 / -1;
+}
+.editor-confirm button {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+.editor-confirm [data-danger] {
+  border-color: #c0392b !important;
+  color: #c0392b;
+}
+
+/* Page settings */
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.editor-field input,
+.editor-field textarea {
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.editor-field small {
+  opacity: 0.6;
+}
+
+/* Shortcuts */
+.editor-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+}
+.editor-shortcuts div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+}
+.editor-shortcuts dt {
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+  line-height: 1.9;
+  color: var(--accent);
+}
+.editor-shortcuts dd {
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* --- Blocks in edit mode ---------------------------------------------------- */
+
+.blocks--editing {
+  /* Room for the drag handles in the window's left padding. */
+  padding-left: 4px;
+}
+
+.eblock {
+  position: relative;
+  outline: 2px dashed transparent;
+  outline-offset: 6px;
+}
+.eblock:hover {
+  outline-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.eblock[data-selected='true'],
+.eblock:focus-within {
+  outline-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.eblock[data-dragging='true'] {
+  z-index: 2;
+  opacity: 0.85;
+  outline: 2px solid var(--accent);
+  background: var(--editor-solid);
+  box-shadow: 6px 6px 0 var(--panel-glow);
+}
+
+.eblock-handle,
+.erow-handle {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -2px;
+  cursor: grab;
+  touch-action: none;
+}
+.eblock-handle {
+  position: absolute;
+  left: -26px;
+  top: 2px;
+  width: 18px;
+  height: 22px;
+  opacity: 0;
+}
+.eblock:hover > .eblock-handle,
+.eblock:focus-within > .eblock-handle,
+.eblock-handle:focus-visible {
+  opacity: 1;
+}
+
+.eblock-tools {
+  position: absolute;
+  right: -6px;
+  top: -36px;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  background: var(--editor-solid);
+  border: 2px solid var(--accent);
+  box-shadow: 3px 3px 0 var(--panel-glow);
+  font-size: 11px;
+}
+.eblock:hover > .eblock-tools,
+.eblock:focus-within > .eblock-tools {
+  display: flex;
+}
+/* One toolbar at a time: while the pointer is over another block, that
+   block's toolbar wins over the focused one's. */
+.blocks--editing:has(> .eblock:hover) > .eblock:focus-within:not(:hover) > .eblock-tools {
+  display: none;
+}
+.eblock-tools button {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+}
+.eblock-tools select {
+  height: 24px;
+  padding: 0 2px;
+}
+.eblock-type {
+  padding: 3px 6px;
+  border-color: transparent !important;
+  font-family: var(--font-pixel), monospace;
+  font-size: 7px !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* Where a block from the palette will land. */
+.drop-line {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  height: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.drop-line:first-child {
+  top: -10px;
+}
+.drop-line:last-child {
+  bottom: -10px;
+}
+
+.blocks-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0 2px;
+  border-top: 4px solid transparent;
+}
+.blocks-end[data-over='true'] {
+  border-top-color: var(--accent);
+}
+.blocks-empty {
+  margin: 0;
+  padding: 18px;
+  width: 100%;
+  border: 2px dashed var(--panel-inner);
+  font-size: 13px;
+  text-align: center;
+  opacity: 0.7;
+}
+.blocks-add,
+.eblock-add {
+  padding: 4px 8px;
+  background: none;
+  border: 2px dashed var(--panel-inner);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.blocks-add:hover,
+.eblock-add:hover,
+.blocks-add:focus-visible,
+.eblock-add:focus-visible {
+  border-color: var(--accent);
+  opacity: 1;
+}
+.eblock-add {
+  margin-top: 8px;
+}
+
+/* List items and tags have their own small handles. */
+.erow {
+  position: relative;
+}
+.erow[data-dragging='true'] {
+  z-index: 2;
+  background: var(--editor-solid);
+  box-shadow: 3px 3px 0 var(--panel-glow);
+}
+.block-list .erow-handle {
+  position: absolute;
+  left: -38px;
+  top: 3px;
+  width: 14px;
+  opacity: 0;
+}
+.block-list .erow:hover > .erow-handle,
+.block-list .erow:focus-within > .erow-handle,
+.erow-handle:focus-visible {
+  opacity: 1;
+}
+
+.etag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 3px;
+}
+.etag .erow-handle {
+  font-size: 10px;
+  opacity: 0.5;
+}
+.etag .erow-handle:hover {
+  opacity: 1;
+}
+.tag-field {
+  min-width: 3ch;
+}
+.etag-remove {
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.5;
+}
+.etag-remove:hover {
+  color: #c0392b;
+  opacity: 1;
+}
+.etag-add button {
+  height: 100%;
+  padding: 2px 9px;
+  background: none;
+  border: 2px dashed var(--accent);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.etag-add button:hover {
+  opacity: 1;
+}
+
+/* The URL behind a link or contact row. */
+.href-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.href-field span {
+  font-family: var(--font-pixel), monospace;
+  font-size: 7px;
+  color: var(--accent);
+}
+.href-field input {
+  flex: 1;
+  min-width: 180px;
+  padding: 4px 6px;
+  background: transparent;
+  border: 2px solid var(--panel-inner);
+  color: inherit;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.href-field[data-invalid] input {
+  border-color: #c0392b;
+}
+.href-field em {
+  flex-basis: 100%;
+  color: #c0392b;
+  font-style: normal;
+}
+
+/* --- Text fields (TipTap) --------------------------------------------------- */
+
+.rich-field .ProseMirror {
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* The field's one paragraph takes the block's look, not the panel's p rules. */
+.rich-field .ProseMirror p {
+  margin: 0;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+.rich-field .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.4;
+}
+.inline-field {
+  display: inline-block;
+  min-width: 4ch;
+}
+
+/* The title, tagline and footer show they're editable on hover. */
+.hero .rich-field .ProseMirror,
+.site-footer .rich-field .ProseMirror {
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+}
+.hero .rich-field .ProseMirror:hover,
+.site-footer .rich-field .ProseMirror:hover {
+  outline-color: color-mix(in srgb, #fff 55%, transparent);
+}
+.hero .rich-field .ProseMirror:focus,
+.site-footer .rich-field .ProseMirror:focus {
+  outline: 2px solid #fff;
+}
+html[data-editor] .site-footer {
+  /* The footer usually ignores the pointer so the cow stays clickable. */
+  pointer-events: auto;
+}
+
+/* --- Formatting toolbar ------------------------------------------------------ */
+
+.format-toolbar {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  transform: translate(-50%, -100%);
+  background: var(--editor-solid);
+  border: 2px solid var(--accent);
+  box-shadow: 3px 3px 0 var(--panel-glow);
+  color: var(--panel-text);
+}
+.format-toolbar button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: transparent;
+  border: 2px solid transparent;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.format-toolbar button:hover {
+  border-color: var(--panel-inner);
+}
+.format-toolbar button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--editor-solid);
+}
+.format-toolbar [data-mark='bold'] {
+  font-weight: 700;
+}
+.format-toolbar [data-mark='italic'] {
+  font-style: italic;
+}
+.format-toolbar [data-mark='highlight'] {
+  font-family: var(--font-pixel), monospace;
+  font-size: 8px;
+}
+.format-link {
+  display: flex;
+  gap: 4px;
+}
+.format-link input {
+  width: 240px;
+  padding: 4px 6px;
+  background: transparent;
+  border: 2px solid var(--panel-inner);
+  color: inherit;
+  font:
+    13px ui-monospace,
+    monospace;
+}
+.format-link input[aria-invalid='true'] {
+  border-color: #c0392b;
+}
+
+@media (max-width: 999px) {
+  /* No room beside the window: the panel floats over it, so start collapsed. */
+  .editor-panel:not([data-collapsed='true']) {
+    width: min(var(--editor-width), 100vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eblock,
+  .erow,
+  .editor-tab {
+    transition: none !important;
+  }
+}
+
+/* Header links in the panel */
+.editor-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.editor-link {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  padding: 8px;
+  background: var(--editor-solid);
+}
+.editor-link > input {
+  min-width: 0;
+  padding: 5px 6px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.editor-link-actions {
+  display: flex;
+  gap: 4px;
+}
+.editor-link .href-field {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+.editor-link .href-field input {
+  min-width: 0;
+}
+.editor-hint code {
+  font-size: 11px;
 }

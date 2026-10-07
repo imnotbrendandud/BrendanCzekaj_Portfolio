@@ -1,0 +1,604 @@
+/* The main page at /: a dark glass panel of content on a deep teal
+   background, with slow drifting colour and a little grain behind it.
+   None of the pixel theme (gamedev.css) loads here. */
+
+:root {
+  /* Background */
+  --bg-deep: #021d20;
+  --bg: #063438;
+  --bg-lit: #0b4f54;
+
+  /* Panel and text. Every pairing here clears WCAG AA on the panel colour. */
+  --panel: rgb(3 24 27 / 0.82);
+  --panel-edge: rgb(94 234 212 / 0.2);
+  --text: #e8fbf8;
+  --muted: #9ccfc8;
+  --accent: #5eead4;
+  --chip: rgb(94 234 212 / 0.1);
+  --line: rgb(94 234 212 / 0.14);
+
+  --nav-height: 64px;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-deep);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* A lit patch behind the content, falling off to the corners. */
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 35%, var(--bg-lit), transparent 70%),
+    radial-gradient(ellipse at 50% 100%, var(--bg), transparent 60%), var(--bg-deep);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family:
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* --- Backdrop ----------------------------------------------------------------
+   Two layers behind the content: an aurora of three soft colour fields that
+   drift on long, out-of-step loops, and a fine static grain over the gradient
+   so it reads as a surface rather than flat digital colour. Both are cheap:
+   the fields are radial gradients that only move (no blur filter to recompute)
+   and the grain is one small tiled image. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Grain: fractal noise, desaturated, at a whisper of opacity. */
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.06;
+}
+
+.aurora {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+  animation: var(--drift) var(--duration) ease-in-out infinite alternate;
+}
+
+.aurora--teal {
+  --drift: drift-a;
+  --duration: 56s;
+  top: -22vmax;
+  left: -18vmax;
+  width: 72vmax;
+  height: 72vmax;
+  background: radial-gradient(circle, rgb(20 184 166 / 0.34), transparent 65%);
+}
+
+.aurora--cyan {
+  --drift: drift-b;
+  --duration: 71s;
+  top: 8vh;
+  right: -24vmax;
+  width: 62vmax;
+  height: 62vmax;
+  background: radial-gradient(circle, rgb(14 165 233 / 0.2), transparent 65%);
+}
+
+.aurora--green {
+  --drift: drift-c;
+  --duration: 63s;
+  bottom: -28vmax;
+  left: 18vw;
+  width: 68vmax;
+  height: 68vmax;
+  background: radial-gradient(circle, rgb(16 185 129 / 0.2), transparent 65%);
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate(20vw, 14vh) scale(1.15);
+  }
+}
+@keyframes drift-b {
+  to {
+    transform: translate(-22vw, 20vh) scale(0.88);
+  }
+}
+@keyframes drift-c {
+  to {
+    transform: translate(16vw, -18vh) scale(1.12);
+  }
+}
+
+/* --- Menu ------------------------------------------------------------------- */
+
+.site-nav {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  /* Drops in from above the screen just after the panel starts to appear,
+     overshooting slightly before it settles. */
+  /* `backwards`, not `both`: hidden during the delay, then no animation
+     style left on the nav afterwards. Even an identity transform would make
+     the nav a containing block and change how its phone dropdown is laid
+     out and composited. */
+  animation: nav-drop 650ms cubic-bezier(0.34, 1.45, 0.64, 1) 180ms backwards;
+}
+
+@keyframes nav-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-48px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.site-nav-menu {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: rgb(3 24 27 / 0.72);
+  border: 1px solid var(--panel-edge);
+  border-radius: 999px;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 0.3),
+    0 0 24px rgb(45 212 191 / 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.site-nav-menu a {
+  display: block;
+  padding: 6px 14px;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+.site-nav-menu a:hover {
+  color: var(--text);
+}
+.site-nav-menu a[aria-current] {
+  background: var(--chip);
+  color: var(--accent);
+}
+.site-nav-extra::after {
+  content: ' →';
+}
+
+.site-nav-toggle {
+  display: none;
+}
+
+/* --- Page --------------------------------------------------------------------- */
+
+.site {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(var(--nav-height) + clamp(16px, 5vh, 56px)) 20px 48px;
+}
+
+/* One dark panel holds everything: a single element, so there are no seams. */
+.site-panel {
+  /* Fades in on load, rising a few pixels into place. */
+  animation: panel-in 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  padding: clamp(28px, 5vw, 44px) clamp(22px, 5vw, 44px) 28px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow:
+    0 30px 80px rgb(0 0 0 / 0.4),
+    0 0 60px rgb(45 212 191 / 0.07);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Header ------------------------------------------------------------------- */
+
+/* Name, headline and links on the left, centred against the photo on the
+   right. */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.site-intro {
+  min-width: 0;
+}
+
+/* A circle with a thin teal ring and a soft glow, matching the page accent. */
+.site-photo {
+  flex: none;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgb(94 234 212 / 0.45);
+  box-shadow:
+    0 0 0 6px rgb(94 234 212 / 0.07),
+    0 0 36px rgb(45 212 191 / 0.22);
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 5.5vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-shadow: 0 0 28px rgb(45 212 191 / 0.35);
+}
+
+.site-headline {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 1.0625rem;
+}
+
+/* Profiles: a row of outline icons. The handle is in each link's tooltip and
+   accessible name, so it costs no space. Quiet until hovered. */
+.site-socials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* Pull the row left by the icons' padding, so the first icon lines up with
+     the name and headline above it. */
+  margin: 20px 0 0 -9px;
+  padding: 0;
+  list-style: none;
+}
+
+.site-socials li {
+  display: flex;
+  align-items: center;
+}
+
+/* A thin divider between links, so on a phone (no hover, no tooltips) it's
+   obvious where one tap target ends and the next begins. Drawn, not typed, so
+   screen readers don't announce a "vertical bar" between links. */
+.site-socials li + li::before {
+  content: '';
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: rgb(94 234 212 / 0.3);
+}
+
+/* When the résumé button leads the row, it lines up on its own. */
+.site-socials:has(.site-resume) {
+  margin-left: 0;
+}
+
+/* A 42px target around a 24px icon: easy to hit, quiet to look at. */
+.site-social {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: var(--muted);
+  transition:
+    color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+.site-social .social-icon {
+  width: 24px;
+  height: 24px;
+  transition: filter 150ms ease-out;
+}
+.site-social:hover,
+.site-social:focus-visible {
+  background: var(--chip);
+  color: var(--accent);
+}
+.site-social:hover .social-icon,
+.site-social:focus-visible .social-icon {
+  filter: drop-shadow(0 0 6px rgb(45 212 191 / 0.6));
+}
+
+/* The résumé is the one call to action, so it keeps a button shape. */
+.site-resume {
+  display: inline-block;
+  padding: 7px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: box-shadow 150ms ease-out;
+}
+.site-resume:hover {
+  box-shadow: 0 0 16px rgb(45 212 191 / 0.35);
+}
+
+/* Read by screen readers, not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Sections ----------------------------------------------------------------- */
+
+.site-section {
+  /* Land below the fixed menu when jumped to. */
+  scroll-margin-top: calc(var(--nav-height) + 12px);
+  padding-top: 48px;
+}
+
+.site-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* A short fading rule after each label. */
+.site-section h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+.site-summary,
+.item-text {
+  margin: 0;
+}
+
+.item + .item {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.item h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.item-period {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.item-sub {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+
+.item-head + .item-text {
+  margin-top: 6px;
+}
+
+.item-bullets {
+  margin: 0;
+  padding-left: 20px;
+}
+.item-bullets li + li {
+  margin-top: 6px;
+}
+.item-bullets li::marker {
+  color: var(--accent);
+}
+
+.item-link {
+  color: var(--accent);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.item-link::after {
+  content: ' →';
+}
+.item-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stack li {
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--accent);
+  font-size: 0.8125rem;
+}
+
+/* --- Footer ------------------------------------------------------------------- */
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 0;
+  padding-top: 56px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.site-footer p {
+  margin: 0;
+}
+.site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.site-footer a::after {
+  content: ' →';
+}
+.site-footer a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* --- Phones ------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  /* No room beside the name: the photo sits above it, a little smaller. */
+  .site-header {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .site-photo {
+    width: 112px;
+    height: 112px;
+  }
+
+  .site-nav {
+    top: 12px;
+    right: 12px;
+  }
+
+  .site-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgb(3 24 27 / 0.8);
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Three bars: the element itself plus two shadows. */
+  .site-nav-bars {
+    width: 14px;
+    height: 2px;
+    background: currentColor;
+    box-shadow:
+      0 -5px 0 currentColor,
+      0 5px 0 currentColor;
+  }
+
+  .site-nav-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+  .site-nav-menu[data-open='false'] {
+    display: none;
+  }
+  .site-nav-menu a {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+  }
+
+  .site {
+    padding-inline: 12px;
+  }
+}
+
+/* --- Reduced motion ------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  /* No entrance and no drift: the page is simply there, glow held still. */
+  .site-nav,
+  .site-panel,
+  .aurora {
+    animation: none;
+  }
+  .site-social,
+  .site-social .social-icon,
+  .site-resume,
+  .site-nav-menu a {
+    transition: none;
+  }
+}

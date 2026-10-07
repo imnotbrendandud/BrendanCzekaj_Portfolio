@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "url": "https://brendanczekaj.com",
+    "title": "Brendan Czekaj — Game Development",
+    "description": "Game development by Brendan Czekaj: Hollow, an ecosystem life-sim in Unity, on a pixel-art page whose sky follows your local clock.",
+    "ogImage": "/og.png",
+    "ogImageAlt": "Pixel-art night sky with stars, a crescent of moonlight and a dark treeline horizon, over the name BRENDAN."
+  },
+  "hero": {
+    "name": "BRENDAN CZEKAJ",
+    "tagline": "GAME DEVELOPMENT",
+    "links": [
+      {
+        "id": "h-email",
+        "label": "Email",
+        "href": "mailto:brendanczekaj@gmail.com"
+      },
+      {
+        "id": "h-linkedin",
+        "label": "LinkedIn",
+        "href": "https://www.linkedin.com/in/brendan-czekaj-529b52255/"
+      },
+      {
+        "id": "h-github",
+        "label": "GitHub",
+        "href": "https://github.com/imnotbrendandud"
+      },
+      {
+        "id": "h-main",
+        "label": "Main site",
+        "href": "/"
+      }
+    ]
+  },
+  "tabs": [
+    {
+      "id": "projects",
+      "label": "PROJECTS",
+      "blocks": [
+        {
+          "id": "b-p",
+          "type": "subheading",
+          "text": "Hollow"
+        },
+        {
+          "id": "b-q",
+          "type": "paragraph",
+          "text": "An ecosystem life-sim set in a three-biome world, with a 72-species creature encyclopedia that fills in as you discover them."
+        },
+        {
+          "id": "b-r",
+          "type": "tags",
+          "tags": [
+            {
+              "id": "t-s",
+              "text": "UNITY 6 LTS"
+            },
+            {
+              "id": "t-t",
+              "text": "C#"
+            }
+          ]
+        },
+        {
+          "id": "b-u",
+          "type": "link",
+          "text": "Devlog",
+          "href": "TODO"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "note": "Built with Next.js. Hand-placed pixels. The sky follows your local clock."
+  }
+}

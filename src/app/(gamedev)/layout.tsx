@@ -4,7 +4,7 @@ import { ThemeScript } from '@/components/ThemeScript';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { DEFAULT_THEME } from '@/lib/theme';
 import { portfolio } from '@/content/portfolio';
-import './globals.css';
+import './gamedev.css';
 
 /** Headings, labels and tags only — never paragraphs. */
 const pressStart = Press_Start_2P({
@@ -24,14 +24,17 @@ const plex = IBM_Plex_Sans({
 
 const { meta } = portfolio;
 
+/** This layout serves /gamedev; the recruiter-facing page at / has its own. */
+const PATH = '/gamedev/';
+
 export const metadata: Metadata = {
   metadataBase: new URL(meta.url),
   title: meta.title,
   description: meta.description,
-  alternates: { canonical: '/' },
+  alternates: { canonical: PATH },
   openGraph: {
     type: 'website',
-    url: meta.url,
+    url: `${meta.url}${PATH}`,
     title: meta.title,
     description: meta.description,
     siteName: meta.title,
@@ -53,7 +56,12 @@ export const viewport: Viewport = {
   themeColor: '#05041a',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Root layout for the pixel-art game development page. A separate root layout
+ * from the main site's, so the pixel theme, its fonts and its pre-paint theme
+ * script never load on the recruiter-facing page, and vice versa.
+ */
+export default function GamedevLayout({ children }: { children: React.ReactNode }) {
   return (
     // The server can't know the visitor's local time, so it renders the default
     // theme. ThemeScript corrects this before the first paint.
