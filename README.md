@@ -1,9 +1,17 @@
-# Brendan — Portfolio
+# Brendan Czekaj — Portfolio
 
-A single-page portfolio with a pixel-art sky that follows the visitor's local clock.
-The sky fills roughly the top 85% of the page; content panels float in it, alternating
-left and right, and the ground — ridges, treeline, grass and a dirt path — is a horizon
-you scroll down to reach.
+Two pages, each with its own root layout so neither loads the other's styles:
+
+- **`/` — the main page, for recruiters.** One readable column on a dark glass panel —
+  name, role and links, then a summary, experience and projects — on a deep teal
+  background. A menu
+  pinned top-right jumps to each section and highlights the one you're reading (a Menu
+  button on phones). Copy lives in [`src/content/site.ts`](src/content/site.ts).
+- **`/gamedev` — the game development page.** A pixel-art sky that follows the visitor's
+  local clock, one screen tall: title and links at the top, a pixel window of projects in
+  the sky, and the ground (ridges, treeline, grass, a dirt path and a grazing cow) along
+  the bottom. Copy lives in [`src/content/portfolio.json`](src/content/portfolio.json) and
+  is edited in place with the block editor (below).
 
 Next.js (App Router) · TypeScript · Tailwind CSS · static export.
 
@@ -33,33 +41,75 @@ Open http://localhost:3000.
 
 ## Editing content
 
-**All copy lives in [`src/content/portfolio.ts`](src/content/portfolio.ts).** Nothing in
-that file controls layout, so you can edit it freely without touching a component. It is
-fully typed — a typo or a missing field fails `npm run typecheck` instead of shipping.
+**The main page (`/`)** reads [`src/content/site.ts`](src/content/site.ts). Edit it by hand;
+it's typed, so a typo fails `npm run typecheck`. Leave a link out rather than ship a
+placeholder.
 
-Search the file for `TODO` to find the placeholders that still need real values:
+**The game development page (`/gamedev`)** reads
+[`src/content/portfolio.json`](src/content/portfolio.json), and the easiest way to change it
+is the block editor on that page. The file's shape is defined in
+[`src/content/portfolio.ts`](src/content/portfolio.ts) and checked by
+[`validate.ts`](src/content/validate.ts) whenever it loads, so a broken file fails
+`npm run build` instead of shipping.
 
-- the employment start date (`experience.entries[].period`)
-- both project links (`projects.entries[].link.href`)
-- email, GitHub and LinkedIn (`contact.links`)
+### The block editor
 
-### Adding a project
+With `npm run dev` running, open `/gamedev` and click **✎ EDIT** in the top-left corner. A side panel opens and
+everything on the page becomes editable. Every change autosaves to `portfolio.json` half a
+second after you stop; the badge in the panel shows **SAVED / SAVING… / NOT SAVED** (hover it
+for the reason if a save fails). Click **✓ Done** to preview the page as visitors see it, then
+commit and deploy as usual — the diff is just what you changed.
 
-Append an entry to `projects.entries`:
+Each tab is a column of **blocks**:
 
-```ts
-{
-  name: 'Project name',
-  blurb: 'One or two sentences. Rendered as body copy.',
-  stack: ['NEXT.JS', 'TYPESCRIPT'],
-  link: { label: 'GitHub', href: 'https://github.com/…' },
-}
-```
+| Block       | Looks like                                              |
+| ----------- | ------------------------------------------------------- |
+| Heading     | Pixel-font section title                                |
+| Subheading  | Bold line, e.g. a role or a project name                |
+| Paragraph   | Body copy                                               |
+| Meta line   | Small muted line under a subheading, e.g. dates         |
+| Bullet list | One point per line                                      |
+| Tags        | Row of pixel labels, e.g. a tech stack                  |
+| Link        | Pixel call to action, e.g. `GitHub →`, opens in new tab |
+| Contact row | Label plus link, e.g. `EMAIL  you@example.com`          |
+| Divider     | Line between one project or job and the next            |
 
-Stack tags render in the pixel font, so keep them short and uppercase. The panel grows to
-fit; no layout changes are needed.
+A "section" such as a project is just a run of blocks; put a divider between sections.
 
----
+- **Add** a block by dragging it from the panel onto the page (a glowing line shows where it
+  will land), or by clicking it in the panel to add it below the block you're in.
+- **Move** a block by its `⋮⋮` handle, with the ↑ ↓ buttons in its toolbar, or with ⌥↑ / ⌥↓.
+  List items and tags have their own handles. **Move to…** sends a block to another tab.
+- **Change** a heading, subheading, paragraph or meta line into one another from the
+  toolbar's type menu. **⧉** duplicates a block; **✕** deletes it.
+- **Write** like a document: Enter starts a new block (or a new list item or tag), and
+  Backspace in an empty one removes it.
+- **Format** by selecting text: bold, italic, highlight, link (⌘B, ⌘I, ⌘⇧H, ⌘K).
+- **Tabs** are managed in the panel: drag to reorder, rename (the URL hash follows, e.g.
+  `#blog`), add, or delete.
+- **Undo / redo** (⌘Z / ⇧⌘Z) covers everything, typing and structure alike.
+- The title, tagline and footer are edited in place; the panel's **Page** section sets the
+  search/browser title and description.
+
+Empty blocks are left off the live site, so a half-finished draft never shows a gap.
+
+The editor is development-only. Its save route is a `*.dev.ts` file that only `next dev`
+loads, accepts requests only from the page's own `localhost` origin, and validates every
+document before writing it; the production build contains neither the route nor any editor
+code (TipTap and dnd-kit are dev dependencies). If you change `portfolio.json` by hand, or
+revert it with git, while the editor is open, the editor picks up the file rather than
+writing over it.
+
+### Editing the JSON by hand
+
+Every block, list item and tag has an `id`, which the editor uses for drag-and-drop; any
+unique short string works for new ones. Formatted text (headings, paragraphs, list items) is
+a small HTML subset — `<strong>`, `<em>`, `<mark>` and `<a href="…">` — with `&amp;`,
+`&lt;` and `&gt;` for those characters. Anything else is shown as literal text, and links
+are limited to http, https, mailto and tel.
+
+Search the JSON for `TODO` to find placeholders that still need real values: the project
+links and the contact details.
 
 ## Tuning the theme time ranges
 
@@ -78,7 +128,7 @@ export const THEME_SCHEDULE = [
 
 Each entry runs from its `from` hour until the next entry's. The last entry wraps around
 midnight. Edit the hours, or add/remove a theme — but if you add one, give it a matching
-`[data-theme='…']` token block in `globals.css`.
+`[data-theme='…']` token block in `gamedev.css`.
 
 The visitor's timezone comes from `Intl.DateTimeFormat().resolvedOptions().timeZone`, which
 needs no permission prompt. **The Geolocation API is never used.**
@@ -101,7 +151,7 @@ location.reload();
 ## How the theming works
 
 Everything visual is a CSS custom property on `[data-theme]` in
-[`src/app/globals.css`](src/app/globals.css): sky gradient stops, star colours, cloud
+[`src/app/(gamedev)/gamedev.css`](<src/app/(gamedev)/gamedev.css>): sky gradient stops, star colours, cloud
 tints, ground colours, panel background/border/text, and glow colours. There is **one set
 of components and four token sets** — no component branches on the theme.
 
@@ -158,28 +208,28 @@ moos.
 To change how far she roams or how long she grazes, see the constants at the
 top of [`src/components/scene/Cow.tsx`](src/components/scene/Cow.tsx)
 (`WALK_MS`, `GRAZE_MS`, `WALK_SPEED`, `EDGE_MARGIN`). Her size is the
-`--cow-px` custom property in `globals.css`.
+`--cow-px` custom property in `gamedev.css`.
 
 ---
 
 ## Accessibility
 
 - **Contrast.** Every theme was measured rather than eyeballed. Panel text and accent text
-  clear WCAG AA (4.5:1) at every panel position in all four themes; worst case is 5.82:1.
-- **The hover dim never touches text.** The brief's original design dimmed unfocused panels
-  to 0.6 opacity, which drops accent text to **2.69:1** — a clear AA failure, because fading
-  the element bleeds the sky through the glyphs. Instead only the panel's _background alpha_
-  and glow move (0.95 focused → 0.88 resting → 0.80 dimmed), a band verified AA throughout.
-  Text renders at full strength in every state.
-- **Touch.** Under `@media (hover: none)` the dim is disabled entirely and an
-  `IntersectionObserver` gives the focus treatment to whichever panel is centred in the
-  viewport.
+  clear WCAG AA (4.5:1) against any part of the sky in all four themes, across a panel
+  background alpha of 0.80–0.95; the window sits at 0.92. Worst case is 5.82:1.
+- **Text is never faded.** Fading the element bleeds the sky through the glyphs (0.6
+  opacity drops accent text to **2.69:1**), so only the panel's _background alpha_ is ever
+  tuned. Text renders at full strength.
+- **Tabs.** The window follows the WAI-ARIA tabs pattern: arrow keys, Home and End move
+  between tabs, only the selected tab is in the tab order, and each panel is focusable so
+  keyboard users can scroll it. Inactive panels are hidden with `visibility`, which takes
+  them out of the accessibility tree while keeping all copy in the static HTML. Each tab
+  is linkable: `/#projects` opens straight to Projects.
 - **Reduced motion.** Under `prefers-reduced-motion: reduce` everything stops — twinkling,
-  shooting stars, cloud drift, parallax, glow pulses and the hover lift — and theme changes
-  become an instant swap.
-- Decorative sky and ground elements are `aria-hidden`, there is a skip link, landmarks are
-  semantic (`header` / `main` / `section` / `footer`), and keyboard focus mirrors the hover
-  treatment.
+  shooting stars, cloud drift, parallax and glow pulses — and theme changes become an
+  instant swap.
+- Decorative sky and ground elements are `aria-hidden`, there is a skip link, and landmarks
+  are semantic (`header` / `main` / `section` / `footer`).
 
 ## Performance
 
@@ -222,7 +272,7 @@ configuration:
    Vercel's nameservers (or add the `A` / `CNAME` records Vercel shows you).
 
 The canonical URL and Open Graph tags come from `portfolio.meta.url` in
-`src/content/portfolio.ts` — change it there if the domain changes.
+`src/content/portfolio.json` — change it there if the domain changes.
 
 Because the output is plain static files, `out/` can also be dropped on GitHub Pages,
 Netlify, Cloudflare Pages or any static host. For a host that serves the site from a
@@ -235,14 +285,34 @@ subpath you would additionally need `basePath` and `assetPrefix` in `next.config
 ```
 src/
   app/
-    layout.tsx          Fonts, SEO + Open Graph metadata, pre-paint theme script
-    page.tsx            Page composition
-    globals.css         Theme tokens, scene, sprites, panels, motion rules
+    (main)/             The main page at /
+      layout.tsx        Root layout: Inter, metadata
+      page.tsx          Name, links, summary, experience, projects
+      site.css          Its styles
+    (gamedev)/          The pixel-art page
+      layout.tsx        Root layout: pixel fonts, metadata, pre-paint theme script
+      gamedev/page.tsx  Scene composition, at /gamedev
+      gamedev.css       Theme tokens, scene, sprites, panels, editor, motion rules
+    api/content/route.dev.ts  Dev-only route that saves edits to portfolio.json
   components/
     ThemeScript.tsx     Blocking pre-paint theme resolution
     ThemeProvider.tsx   Theme state, clock re-checks, visibility pausing
     ThemeToggle.tsx     Pixel sun/moon override control
-    Panel.tsx           Floating dialog box + touch focus fallback
+    TabbedWindow.tsx    The one pixel window: ARIA tabs, hash deep links
+    site/               The main page's pieces
+      SiteNav.tsx       Top-right section menu with current-section highlight
+    content/
+      Blocks.tsx        Read-only block rendering, formatted text
+      SiteContent.tsx   Title, tabbed window and footer
+      PageContent.tsx   SiteContent, or the editor under `npm run dev`
+    editor/             Dev-only block editor
+      Editor.tsx        Root: EDIT toggle, drag and drop, editable page
+      Panel.tsx         Side panel: block palette, tabs, page settings
+      EditableBlocks.tsx  Block chrome and per-type editing
+      RichField.tsx     One line of editable text (TipTap)
+      FormatToolbar.tsx Bold, italic, highlight and link on selection
+      store.tsx         Document, undo history, autosave, focus
+      model.ts          Block factories, ids, helpers
     scene/
       PixelSprite.tsx   Renders a pixel map as one block per horizontal run
       StarField.tsx     Seeded sparkles and dots
@@ -251,13 +321,18 @@ src/
       ShootingStars.tsx Randomly spawned meteors, per-theme rate
       Ground.tsx        Ridges, treeline, grass, dirt path
       Cow.tsx           Grazing cow: walk/graze state machine, click to moo
-  content/portfolio.ts  All copy
+  content/
+    site.ts             Copy for the main page
+    portfolio.json      Copy for /gamedev, as tabs of blocks
+    portfolio.ts        Its types
+    validate.ts         Shape check + normalisation, on load and on save
   lib/
     theme.ts            Theme types + time schedule
     pixel.ts            Pixel maps (sun, moon, clouds, trees)
     cow.ts              Cow sprite frames (walk cycle, grazing, chew)
     moo.ts              Web Audio moo synthesis
     prng.ts             Seeded RNG for deterministic scene generation
+    inline.ts           Formatted-text parser and link sanitiser
 scripts/generate-og.mjs Open Graph image renderer
 ```
 

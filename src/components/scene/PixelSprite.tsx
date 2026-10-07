@@ -27,13 +27,19 @@ export function PixelSprite({
 }: PixelSpriteProps) {
   const runs = toRuns(map);
   const w = mapWidth(map);
+  // Snap to whole pixels. Callers pass fractional sizes (a cloud at 7.49px, or
+  // anything times --px-scale), and with a fractional unit each run's edges get
+  // rounded to the screen grid independently, so neighbouring rows can miss
+  // each other and leave a hairline of sky between them. Whole-pixel units put
+  // every edge an exact number of pixels from the sprite's origin.
+  const px = `max(1px, round(${unit}, 1px))`;
   return (
     <div
       className={className}
       style={{
         position: 'absolute',
-        width: `calc(${w} * ${unit})`,
-        height: `calc(${map.length} * ${unit})`,
+        width: `calc(${w} * ${px})`,
+        height: `calc(${map.length} * ${px})`,
         ...style,
       }}
     >
@@ -44,10 +50,10 @@ export function PixelSprite({
           style={{
             position: 'absolute',
             display: 'block',
-            left: `calc(${run.x} * ${unit})`,
-            top: `calc(${run.y} * ${unit})`,
-            width: `calc(${run.w} * ${unit})`,
-            height: unit,
+            left: `calc(${run.x} * ${px})`,
+            top: `calc(${run.y} * ${px})`,
+            width: `calc(${run.w} * ${px})`,
+            height: px,
             background: palette[run.key],
           }}
         />

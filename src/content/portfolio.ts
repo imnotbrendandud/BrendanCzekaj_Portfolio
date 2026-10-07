@@ -1,42 +1,23 @@
 /**
- * All site copy lives here. Edit this file to change content without touching
- * layout, styling, or the scene. Every field is typed, so a typo or a missing
- * property fails `npm run typecheck` rather than shipping silently.
+ * The shape of the site copy. The copy itself lives in `portfolio.json`; edit
+ * it by hand, or in place on the page with the block editor (`npm run dev`,
+ * then EDIT).
  *
- * Anything marked TODO is a placeholder you need to fill in.
+ * Each tab in the window is a list of blocks: headings, paragraphs, lists,
+ * tags, links, contact rows and dividers. A project, a job or any other
+ * "section" is just a run of blocks, with a divider between one and the next.
+ *
+ * The JSON is validated when this module loads (see validate.ts), so a broken
+ * file fails `npm run build` instead of shipping.
+ *
+ * Anything marked TODO in the JSON is a placeholder you need to fill in:
+ * - experience: your real start date, e.g. '2023 — Present'
+ * - project links: the real repo, live site, devlog or itch.io page
+ * - contact links: all three hrefs and their display text
  */
 
-export type Tag = string;
-
-export interface ProjectLink {
-  /** Visible label, e.g. "GitHub" or "Live demo". */
-  readonly label: string;
-  readonly href: string;
-}
-
-export interface Project {
-  readonly name: string;
-  /** One or two sentences. Rendered as body copy, not pixel font. */
-  readonly blurb: string;
-  readonly stack: readonly Tag[];
-  readonly link: ProjectLink;
-}
-
-export interface ExperienceEntry {
-  readonly role: string;
-  readonly company: string;
-  /** Free-form date range. TODO: fill in the real start date. */
-  readonly period: string;
-  readonly bullets: readonly string[];
-  readonly stack: readonly Tag[];
-}
-
-export interface ContactLink {
-  readonly label: string;
-  readonly href: string;
-  /** Shown instead of the raw href when set. */
-  readonly display?: string;
-}
+import data from './portfolio.json';
+import { validatePortfolio } from './validate';
 
 export interface SiteMeta {
   /** Absolute origin, no trailing slash. Used for canonical + Open Graph URLs. */
@@ -48,112 +29,94 @@ export interface SiteMeta {
   readonly ogImageAlt: string;
 }
 
+/**
+ * Formatted text: a strict HTML subset of <strong>, <em>, <mark> and
+ * <a href="…">. See src/lib/inline.ts.
+ */
+export type RichText = string;
+
+/** Every block, tag and list item carries a stable id for editing and drag-and-drop. */
+interface Identified {
+  readonly id: string;
+}
+
+export interface ListItem extends Identified {
+  readonly text: RichText;
+}
+
+export interface Tag extends Identified {
+  readonly text: string;
+}
+
+export interface TextBlock extends Identified {
+  /** heading: pixel-font title · subheading: bold line · meta: small muted line */
+  readonly type: 'heading' | 'subheading' | 'meta' | 'paragraph';
+  readonly text: RichText;
+}
+
+export interface ListBlock extends Identified {
+  readonly type: 'list';
+  readonly items: readonly ListItem[];
+}
+
+/** A row of pixel-font labels, e.g. a tech stack. Plain text; keep each short. */
+export interface TagsBlock extends Identified {
+  readonly type: 'tags';
+  readonly tags: readonly Tag[];
+}
+
+/** A pixel-font call to action, e.g. "GitHub →". Opens in a new tab. */
+export interface LinkBlock extends Identified {
+  readonly type: 'link';
+  readonly text: string;
+  readonly href: string;
+}
+
+/** A labelled contact line, e.g. EMAIL  you@example.com. */
+export interface ContactBlock extends Identified {
+  readonly type: 'contact';
+  readonly label: string;
+  readonly text: string;
+  readonly href: string;
+}
+
+/** A horizontal rule, used to separate one project or job from the next. */
+export interface DividerBlock extends Identified {
+  readonly type: 'divider';
+}
+
+export type Block = TextBlock | ListBlock | TagsBlock | LinkBlock | ContactBlock | DividerBlock;
+export type BlockType = Block['type'];
+
+export interface Tab {
+  /** URL hash for the tab, e.g. `projects` for /#projects. */
+  readonly id: string;
+  /** Tab label in the pixel font. One short word; numbering is automatic. */
+  readonly label: string;
+  readonly blocks: readonly Block[];
+}
+
+/** A button under the title, e.g. Résumé or LinkedIn. Always on screen. */
+export interface HeroLink extends Identified {
+  /** Short; rendered in the pixel font. */
+  readonly label: string;
+  readonly href: string;
+}
+
 export interface Portfolio {
   readonly meta: SiteMeta;
   readonly hero: {
+    /** Your full name, so a search for it finds the page. */
     readonly name: string;
-    /** One line. Rendered in the pixel font, so keep it short. */
+    /** Role and company, in the pixel font. */
     readonly tagline: string;
+    /** The first thing a recruiter looks for: résumé, LinkedIn, GitHub, email. */
+    readonly links: readonly HeroLink[];
   };
-  readonly about: {
-    readonly heading: string;
-    readonly paragraphs: readonly string[];
-  };
-  readonly experience: {
-    readonly heading: string;
-    readonly entries: readonly ExperienceEntry[];
-  };
-  readonly projects: {
-    readonly heading: string;
-    readonly entries: readonly Project[];
-  };
-  readonly contact: {
-    readonly heading: string;
-    readonly blurb: string;
-    readonly links: readonly ContactLink[];
-  };
+  readonly tabs: readonly Tab[];
   readonly footer: {
     readonly note: string;
   };
 }
 
-export const portfolio: Portfolio = {
-  meta: {
-    url: 'https://brendanczekaj.com',
-    title: 'Brendan — Software Engineer',
-    description:
-      'Software engineer at United Wholesale Mortgage. C#/.NET, React, SQL Server, Kafka, Redis, and Orkes-orchestrated workflows. Building Nexus and Hollow on the side.',
-    ogImage: '/og.png',
-    ogImageAlt:
-      'Pixel-art night sky with stars, a crescent of moonlight and a dark treeline horizon, over the name BRENDAN.',
-  },
-
-  hero: {
-    name: 'BRENDAN',
-    tagline: 'SOFTWARE ENGINEER · INDIE BUILDER',
-  },
-
-  about: {
-    heading: '01 · ABOUT',
-    paragraphs: [
-      "I'm a software engineer building internal microservices that mortgage loan teams use every day — owning features end-to-end across a C#/.NET and React stack on SQL Server, Kafka, Redis, and Orkes-orchestrated workflows.",
-      "Off the clock, I'm building toward an independent product of my own.",
-    ],
-  },
-
-  experience: {
-    heading: '02 · EXPERIENCE',
-    entries: [
-      {
-        role: 'Software Engineer',
-        company: 'United Wholesale Mortgage',
-        // TODO: replace with your real start date, e.g. '2023 — Present'.
-        period: 'TODO — Present',
-        bullets: [
-          'Own features end-to-end across the Queue and Task microservices, the internal system mortgage loan teams use for task management.',
-          'Work in an enterprise microservice architecture with Orkes-orchestrated workflows.',
-          'Use mutation testing with Stryker to raise confidence in the test suite.',
-        ],
-        stack: ['C#/.NET', 'REACT', 'SQL SERVER', 'KAFKA', 'REDIS', 'ORKES', 'DOCKER'],
-      },
-    ],
-  },
-
-  projects: {
-    heading: '03 · PROJECTS',
-    entries: [
-      {
-        name: 'Nexus',
-        blurb:
-          'A local-first productivity app: journal, tasks, goals, habits and a Pomodoro timer in one place. Everything persists in the browser, so there is no backend and no account.',
-        stack: ['NEXT.JS', 'TYPESCRIPT', 'DEXIE.JS'],
-        // TODO: point this at the real repo or live site.
-        link: { label: 'GitHub', href: 'TODO' },
-      },
-      {
-        name: 'Hollow',
-        blurb:
-          'An ecosystem life-sim set in a three-biome world, with a 72-species creature encyclopedia that fills in as you discover them.',
-        stack: ['UNITY 6 LTS', 'C#'],
-        // TODO: point this at the real repo, devlog or itch.io page.
-        link: { label: 'Devlog', href: 'TODO' },
-      },
-    ],
-  },
-
-  contact: {
-    heading: '04 · CONTACT',
-    blurb:
-      "Heads-down on the day job, building an independent product on the side. If either overlaps with what you're doing, I'd like to hear about it.",
-    links: [
-      // TODO: fill in all three hrefs.
-      { label: 'Email', href: 'mailto:TODO', display: 'TODO@example.com' },
-      { label: 'GitHub', href: 'TODO', display: 'github.com/TODO' },
-      { label: 'LinkedIn', href: 'TODO', display: 'linkedin.com/in/TODO' },
-    ],
-  },
-
-  footer: {
-    note: 'Built with Next.js. Hand-placed pixels. The sky follows your local clock.',
-  },
-};
+export const portfolio: Portfolio = validatePortfolio(data);
