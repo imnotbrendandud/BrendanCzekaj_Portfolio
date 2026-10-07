@@ -1,0 +1,133 @@
+{
+  "url": "https://brendanczekaj.com",
+  "name": "Brendan Czekaj",
+  "headline": "Software Engineer at United Wholesale Mortgage",
+  "photo": {
+    "src": "/brendan-czekaj.jpg",
+    "alt": "Headshot of Brendan Czekaj"
+  },
+  "title": "Brendan Czekaj — Software Engineer",
+  "description": "Software engineer at United Wholesale Mortgage building full-stack microservices in C#/.NET and React, with SQL Server, Kafka, Redis and Orkes.",
+  "socials": [
+    {
+      "id": "s-1",
+      "network": "email",
+      "handle": "brendanczekaj@gmail.com",
+      "href": "mailto:brendanczekaj@gmail.com"
+    },
+    {
+      "id": "s-2",
+      "network": "linkedin",
+      "handle": "brendan-czekaj-529b52255",
+      "href": "https://www.linkedin.com/in/brendan-czekaj-529b52255/"
+    },
+    {
+      "id": "s-3",
+      "network": "github",
+      "handle": "imnotbrendandud",
+      "href": "https://github.com/imnotbrendandud"
+    }
+  ],
+  "resume": "",
+  "summary": "I'm a software engineer at United Wholesale Mortgage, where I build and maintain full-stack microservices behind the internal tools used to manage tasks on mortgage loans. I own features end to end, working in C# .NET, React, and SQL Server, with Kafka, Redis, and Orkes for messaging, caching, and orchestration.",
+  "experience": [
+    {
+      "id": "r-4",
+      "title": "Software Engineer",
+      "company": "United Wholesale Mortgage",
+      "period": "May 2025 — Present",
+      "bullets": [
+        {
+          "id": "i-5",
+          "text": "Own features end-to-end across the Queue and Task microservices, the internal system mortgage loan teams use for task management."
+        },
+        {
+          "id": "i-6",
+          "text": "Work in an enterprise microservice architecture with Orkes-orchestrated workflows."
+        },
+        {
+          "id": "i-7",
+          "text": "Use mutation testing with Stryker to raise confidence in the test suite."
+        }
+      ],
+      "stack": [
+        {
+          "id": "t-8",
+          "text": "C#/.NET"
+        },
+        {
+          "id": "t-9",
+          "text": "React"
+        },
+        {
+          "id": "t-a",
+          "text": "SQL Server"
+        },
+        {
+          "id": "t-b",
+          "text": "Kafka"
+        },
+        {
+          "id": "t-c",
+          "text": "Redis"
+        },
+        {
+          "id": "t-d",
+          "text": "Orkes"
+        },
+        {
+          "id": "t-e",
+          "text": "Docker"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "p-f",
+      "name": "Nexus",
+      "blurb": "A local-first productivity app: journal, tasks, goals, habits and a Pomodoro timer in one place. Everything persists in the browser, so there is no backend and no account.",
+      "stack": [
+        {
+          "id": "t-g",
+          "text": "Next.js"
+        },
+        {
+          "id": "t-h",
+          "text": "TypeScript"
+        },
+        {
+          "id": "t-i",
+          "text": "Dexie.js"
+        }
+      ],
+      "link": {
+        "label": "",
+        "href": ""
+      }
+    },
+    {
+      "id": "p-j",
+      "name": "Hollow",
+      "blurb": "An ecosystem life-sim set in a three-biome world, with a 72-species creature encyclopedia that fills in as you discover them.",
+      "stack": [
+        {
+          "id": "t-k",
+          "text": "Unity 6"
+        },
+        {
+          "id": "t-l",
+          "text": "C#"
+        }
+      ],
+      "link": {
+        "label": "Game dev portfolio",
+        "href": "/gamedev/"
+      }
+    }
+  ],
+  "gamedev": {
+    "label": "Game dev portfolio",
+    "href": "/gamedev/"
+  }
+}

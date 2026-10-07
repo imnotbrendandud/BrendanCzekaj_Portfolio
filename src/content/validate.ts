@@ -1,4 +1,6 @@
 import type { Block, HeroLink, Portfolio, Tab } from './portfolio';
+import { NETWORKS, type Network } from './networks';
+import type { Site } from './site';
 import { normalizeInline, sanitizeHref } from '@/lib/inline';
 
 /**
@@ -175,4 +177,85 @@ function uniqueId(value: unknown, at: string, ids: Set<string>): string {
   if (ids.has(s)) throw new ContentError(at, `duplicates the id "${s}"`);
   ids.add(s);
   return s;
+}
+
+/**
+ * The same checks for the main page's copy (site.json): returns a normalised
+ * copy or throws with the path of the first problem.
+ */
+export function validateSite(input: unknown): Site {
+  const ids = new Set<string>();
+  const doc = object(input, 'site');
+  const photo = object(doc.photo, 'photo');
+  const gamedev = object(doc.gamedev, 'gamedev');
+
+  const tags = (value: unknown, at: string) =>
+    array(value, at).map((raw, i) => {
+      const where = `${at}[${i}]`;
+      const tag = object(raw, where);
+      return { id: uniqueId(tag.id, `${where}.id`, ids), text: string(tag.text, `${where}.text`) };
+    });
+
+  return {
+    url: string(doc.url, 'url'),
+    name: string(doc.name, 'name'),
+    headline: string(doc.headline, 'headline'),
+    photo: { src: string(photo.src, 'photo.src'), alt: string(photo.alt, 'photo.alt') },
+    title: string(doc.title, 'title'),
+    description: string(doc.description, 'description'),
+    socials: array(doc.socials, 'socials').map((raw, i) => {
+      const at = `socials[${i}]`;
+      const social = object(raw, at);
+      const network = social.network;
+      if (!(NETWORKS as readonly unknown[]).includes(network)) {
+        throw new ContentError(`${at}.network`, `should be one of ${NETWORKS.join(', ')}`);
+      }
+      return {
+        id: uniqueId(social.id, `${at}.id`, ids),
+        network: network as Network,
+        handle: string(social.handle, `${at}.handle`),
+        href: href(social.href, `${at}.href`),
+      };
+    }),
+    resume: href(doc.resume, 'resume'),
+    summary: rich(doc.summary, 'summary'),
+    experience: array(doc.experience, 'experience').map((raw, i) => {
+      const at = `experience[${i}]`;
+      const role = object(raw, at);
+      return {
+        id: uniqueId(role.id, `${at}.id`, ids),
+        title: string(role.title, `${at}.title`),
+        company: string(role.company, `${at}.company`),
+        period: string(role.period, `${at}.period`),
+        bullets: array(role.bullets, `${at}.bullets`).map((rawBullet, j) => {
+          const where = `${at}.bullets[${j}]`;
+          const bullet = object(rawBullet, where);
+          return {
+            id: uniqueId(bullet.id, `${where}.id`, ids),
+            text: rich(bullet.text, `${where}.text`),
+          };
+        }),
+        stack: tags(role.stack, `${at}.stack`),
+      };
+    }),
+    projects: array(doc.projects, 'projects').map((raw, i) => {
+      const at = `projects[${i}]`;
+      const project = object(raw, at);
+      const link = object(project.link, `${at}.link`);
+      return {
+        id: uniqueId(project.id, `${at}.id`, ids),
+        name: string(project.name, `${at}.name`),
+        blurb: rich(project.blurb, `${at}.blurb`),
+        stack: tags(project.stack, `${at}.stack`),
+        link: {
+          label: string(link.label, `${at}.link.label`),
+          href: href(link.href, `${at}.link.href`),
+        },
+      };
+    }),
+    gamedev: {
+      label: string(gamedev.label, 'gamedev.label'),
+      href: href(gamedev.href, 'gamedev.href'),
+    },
+  };
 }

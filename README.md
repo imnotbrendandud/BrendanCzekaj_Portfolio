@@ -6,7 +6,8 @@ Two pages, each with its own root layout so neither loads the other's styles:
   name, role and links, then a summary, experience and projects — on a deep teal
   background. A menu
   pinned top-right jumps to each section and highlights the one you're reading (a Menu
-  button on phones). Copy lives in [`src/content/site.ts`](src/content/site.ts).
+  button on phones). Copy lives in [`src/content/site.json`](src/content/site.json) and
+  is edited in place with the page editor (below).
 - **`/gamedev` — the game development page.** A pixel-art sky that follows the visitor's
   local clock, one screen tall: title and links at the top, a pixel window of projects in
   the sky, and the ground (ridges, treeline, grass, a dirt path and a grazing cow) along
@@ -41,16 +42,42 @@ Open http://localhost:3000.
 
 ## Editing content
 
-**The main page (`/`)** reads [`src/content/site.ts`](src/content/site.ts). Edit it by hand;
-it's typed, so a typo fails `npm run typecheck`. Leave a link out rather than ship a
-placeholder.
+Both pages are edited in place under `npm run dev`: open the page, click **✎ EDIT** in the
+top-left corner, and change anything you see. Every change autosaves to the page's JSON
+file; commit and deploy as usual. Neither editor ships: the production build renders both
+pages from their JSON with no editor code.
 
-**The game development page (`/gamedev`)** reads
-[`src/content/portfolio.json`](src/content/portfolio.json), and the easiest way to change it
-is the block editor on that page. The file's shape is defined in
-[`src/content/portfolio.ts`](src/content/portfolio.ts) and checked by
-[`validate.ts`](src/content/validate.ts) whenever it loads, so a broken file fails
+| Page       | Copy                                                       | Shape and checks                                                                             |
+| ---------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `/`        | [`src/content/site.json`](src/content/site.json)           | [`site.ts`](src/content/site.ts), `validateSite` in [`validate.ts`](src/content/validate.ts) |
+| `/gamedev` | [`src/content/portfolio.json`](src/content/portfolio.json) | [`portfolio.ts`](src/content/portfolio.ts), `validatePortfolio`                              |
+
+Each file is validated whenever it loads and on every save, so a broken file fails
 `npm run build` instead of shipping.
+
+### The main page editor
+
+The page looks the same while you edit; every piece of text is editable where it sits.
+
+- **Header**: name and headline in place. Profiles (network, handle, URL) and the résumé
+  path are listed under them: **＋ Add profile**, drag to reorder, ✕ to remove.
+- **About**: the summary, with formatting (select text for bold, italic, highlight, link).
+- **Experience**: **＋ Add role** puts a new role on top. Each role's title, dates and
+  company are edited in place; Enter moves on to the next field.
+- **Bullets**: Enter starts a new bullet, Backspace in an empty one removes it, and each has
+  a drag handle. **Stack** chips work the same way, with ＋ to add and × to remove.
+- **Projects**: name, link label and URL, description and stack. **＋ Add project** at the
+  bottom.
+- Every role and project card has a drag handle and, in the margin, ↑ ↓ to move, ⧉ to
+  duplicate and ✕ to delete (⌘Z brings it back).
+- The bar at the top left shows whether changes are saved, with undo and redo (⌘Z / ⇧⌘Z),
+  **⚙ Page** for the search title and description, photo and game dev link, and **✓ Done** to
+  preview.
+
+Unfinished drafts don't show on the live page: an empty bullet, stack chip, role, project
+or link, or a profile with no URL, is left out rather than shown half-done.
+
+**The game development page** uses the block editor below.
 
 ### The block editor
 
@@ -301,6 +328,11 @@ src/
     TabbedWindow.tsx    The one pixel window: ARIA tabs, hash deep links
     site/               The main page's pieces
       SiteNav.tsx       Top-right section menu with current-section highlight
+      SiteView.tsx      The main page's content, read-only (what ships)
+      DevSiteContent.tsx  Loads the editor under `npm run dev`
+    site-editor/        Dev-only editor for the main page
+      SiteEditor.tsx    Root: EDIT toggle, drag and drop, editor bar, page settings
+      EditableSite.tsx  The page with every field editable
     content/
       Blocks.tsx        Read-only block rendering, formatted text
       SiteContent.tsx   Title, tabbed window and footer
@@ -311,7 +343,8 @@ src/
       EditableBlocks.tsx  Block chrome and per-type editing
       RichField.tsx     One line of editable text (TipTap)
       FormatToolbar.tsx Bold, italic, highlight and link on selection
-      store.tsx         Document, undo history, autosave, focus
+      store.tsx         Document, undo history, autosave, focus (shared by both editors)
+      dnd.ts            Keyboard drag scoped to an item's own list
       model.ts          Block factories, ids, helpers
     scene/
       PixelSprite.tsx   Renders a pixel map as one block per horizontal run
@@ -322,7 +355,9 @@ src/
       Ground.tsx        Ridges, treeline, grass, dirt path
       Cow.tsx           Grazing cow: walk/graze state machine, click to moo
   content/
-    site.ts             Copy for the main page
+    site.json           Copy for the main page
+    site.ts             Its types
+    networks.ts         Profile networks with icons
     portfolio.json      Copy for /gamedev, as tabs of blocks
     portfolio.ts        Its types
     validate.ts         Shape check + normalisation, on load and on save

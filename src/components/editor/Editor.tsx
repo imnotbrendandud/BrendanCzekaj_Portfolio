@@ -15,7 +15,6 @@ import {
   type DragMoveEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { BlockType, Portfolio } from '@/content/portfolio';
 import { SiteContent } from '@/components/content/SiteContent';
 import {
@@ -24,11 +23,14 @@ import {
   useBlockActions,
   type PaletteTarget,
 } from './EditableBlocks';
+import { scopedKeyboardCoordinates } from './dnd';
 import { FormatToolbar } from './FormatToolbar';
 import { BLOCK_KINDS, locate, moveItem } from './model';
 import { Panel } from './Panel';
 import { RichField } from './RichField';
-import { EditorProvider, useEditorStore } from './store';
+import { validatePortfolio } from '@/content/validate';
+import { EditorProvider, useEditorStore, useUndoShortcuts } from './store';
+import { useStoredFlag } from './useStoredFlag';
 
 /**
  * The in-place block editor. Development only: page.tsx loads this with a
@@ -40,7 +42,7 @@ import { EditorProvider, useEditorStore } from './store';
  */
 export function Editor({ source }: { source: Portfolio }) {
   return (
-    <EditorProvider source={source}>
+    <EditorProvider source={source} validate={validatePortfolio} target="portfolio">
       <EditorRoot />
     </EditorProvider>
   );
@@ -54,12 +56,33 @@ type DragData =
   | { kind: 'tag' | 'item'; parent: string }
   | { kind: 'tab' };
 
+/**
+ * Where a dragged thing may land: blocks among blocks (or the end of the
+ * tab), a tag within its own row, a list item within its own list, a tab
+ * among tabs. Shared by pointer collision and keyboard stepping.
+ */
+function canLand(active: DragData | undefined, target: DragData | undefined): boolean {
+  if (!active || !target) return false;
+  switch (active.kind) {
+    case 'palette':
+    case 'block':
+      return target.kind === 'block' || target.kind === 'end';
+    case 'tag':
+    case 'item':
+      return target.kind === active.kind && target.parent === active.parent;
+    case 'tab':
+      return target.kind === 'tab';
+    default:
+      return false;
+  }
+}
+
 const OPEN_KEY = 'portfolio-editor-open';
 const COLLAPSED_KEY = 'portfolio-editor-collapsed';
 
 function EditorRoot() {
   const store = useEditorStore();
-  const { doc, update, activeTab, setActiveTab, undo, redo } = store;
+  const { doc, update, activeTab, setActiveTab } = store;
   const actions = useBlockActions();
 
   const [open, setOpen] = useStoredFlag(OPEN_KEY);
@@ -74,28 +97,20 @@ function EditorRoot() {
     return () => void delete root.dataset.editor;
   }, [open, collapsed]);
 
-  // One undo history for the whole page. Plain inputs (tab labels, URLs) keep
-  // the browser's own undo while you're typing in them.
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey)) return;
-      const key = event.key.toLowerCase();
-      if (key !== 'z' && key !== 'y') return;
-      const target = event.target as HTMLElement | null;
-      if (target?.matches('input, textarea')) return;
-      event.preventDefault();
-      if (key === 'y' || event.shiftKey) redo();
-      else undo();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [open, undo, redo]);
+  useUndoShortcuts(open);
 
   const sensors = useSensors(
     // A few pixels of travel before a drag starts, so clicks still click.
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    // Arrow keys step only between places the item can land (see dnd.ts).
+    useSensor(KeyboardSensor, {
+      coordinateGetter: scopedKeyboardCoordinates((active, container) =>
+        canLand(
+          active.data.current as DragData | undefined,
+          container.data.current as DragData | undefined,
+        ),
+      ),
+    }),
   );
 
   if (!open) {
@@ -115,22 +130,9 @@ function EditorRoot() {
   // blocks, a tag within its own row, a tab among tabs.
   const collision: CollisionDetection = (args) => {
     const active = args.active.data.current as DragData | undefined;
-    const containers = args.droppableContainers.filter((container) => {
-      const data = container.data.current as DragData | undefined;
-      if (!active || !data) return false;
-      switch (active.kind) {
-        case 'palette':
-        case 'block':
-          return data.kind === 'block' || data.kind === 'end';
-        case 'tag':
-        case 'item':
-          return data.kind === active.kind && data.parent === active.parent;
-        case 'tab':
-          return data.kind === 'tab';
-        default:
-          return false;
-      }
-    });
+    const containers = args.droppableContainers.filter((container) =>
+      canLand(active, container.data.current as DragData | undefined),
+    );
     const scoped = { ...args, droppableContainers: containers };
     if (active?.kind === 'palette') {
       const hits = pointerWithin(scoped);
@@ -295,21 +297,4 @@ function EditorRoot() {
       </PaletteTargetContext.Provider>
     </DndContext>
   );
-}
-
-/** A boolean remembered in localStorage. A convenience only, so failures are ignored. */
-function useStoredFlag(key: string): [boolean, (value: boolean) => void] {
-  const [value, setValue] = useState(false);
-  useEffect(() => {
-    try {
-      setValue(localStorage.getItem(key) === '1');
-    } catch {}
-  }, [key]);
-  const set = (next: boolean) => {
-    setValue(next);
-    try {
-      localStorage.setItem(key, next ? '1' : '0');
-    } catch {}
-  };
-  return [value, set];
 }
