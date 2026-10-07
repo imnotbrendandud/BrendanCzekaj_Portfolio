@@ -1,5 +1,6 @@
 /**
- * Saves the block editor's document to src/content/portfolio.json.
+ * Saves an editor's document to its content file: portfolio.json for the
+ * pixel page at /gamedev, site.json for the main page.
  *
  * DEV ONLY. The `.dev.ts` extension is registered in next.config.ts for the
  * development server alone, so this route doesn't exist in `next build` and
@@ -9,9 +10,16 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as prettier from 'prettier';
-import { ContentError, validatePortfolio } from '@/content/validate';
+import { ContentError, validatePortfolio, validateSite } from '@/content/validate';
 
-const FILE = path.join(process.cwd(), 'src/content/portfolio.json');
+/**
+ * Each target names one file and the validator its page loads it with. A
+ * request can only pick from this list, so it can never write anywhere else.
+ */
+const TARGETS: Record<string, { file: string; validate: (input: unknown) => unknown }> = {
+  portfolio: { file: 'src/content/portfolio.json', validate: validatePortfolio },
+  site: { file: 'src/content/site.json', validate: validateSite },
+};
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /** Writes run one at a time, in arrival order, so fast typing can't interleave. */
@@ -44,15 +52,25 @@ export async function POST(request: Request) {
 
   // The same validation the site runs when it loads the file: whatever the
   // page sends, only a document the site can render is ever written.
+  const { target: targetName, content: raw } = (body ?? {}) as {
+    target?: unknown;
+    content?: unknown;
+  };
+  const target = typeof targetName === 'string' ? TARGETS[targetName] : undefined;
+  if (!target || !Object.hasOwn(TARGETS, targetName as string)) {
+    return Response.json({ error: 'Unknown content target.' }, { status: 400 });
+  }
+
   let content;
   try {
-    content = validatePortfolio((body as { content?: unknown } | null)?.content);
+    content = target.validate(raw);
   } catch (error) {
     const message = error instanceof ContentError ? error.message : 'Invalid content.';
     return Response.json({ error: message }, { status: 422 });
   }
 
-  const job = queue.then(() => write(content));
+  const file = path.join(process.cwd(), target.file);
+  const job = queue.then(() => write(file, content));
   queue = job.catch(() => {});
   try {
     await job;
@@ -62,21 +80,21 @@ export async function POST(request: Request) {
   }
 }
 
-async function write(content: unknown) {
-  const options = await prettier.resolveConfig(FILE);
+async function write(file: string, content: unknown) {
+  const options = await prettier.resolveConfig(file);
   // Indented input matters: Prettier keeps an object expanded only if it already
   // spans lines, so compact JSON would collapse small objects and turn a
   // one-word edit into a diff across the whole file.
   const formatted = await prettier.format(JSON.stringify(content, null, 2), {
     ...options,
-    filepath: FILE,
+    filepath: file,
   });
 
   // Unchanged: skip the write, and the hot reload it would trigger.
-  if (formatted === (await readFile(FILE, 'utf8').catch(() => ''))) return;
+  if (formatted === (await readFile(file, 'utf8').catch(() => ''))) return;
 
   // Write beside the file, then swap it in, so a crash can't leave half a file.
-  const temp = `${FILE}.tmp`;
+  const temp = `${file}.tmp`;
   await writeFile(temp, formatted);
-  await rename(temp, FILE);
+  await rename(temp, file);
 }

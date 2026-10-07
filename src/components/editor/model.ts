@@ -12,7 +12,7 @@ export type DraftTab = Draft<Tab>;
 export type DraftBlock = Draft<Block>;
 
 /** Short random ids, prefixed by kind so they're readable in the JSON. */
-export function newId(prefix: 'b' | 't' | 'i' | 'h'): string {
+export function newId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
 }
 

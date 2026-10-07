@@ -11,6 +11,7 @@ import Italic from '@tiptap/extension-italic';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import { Placeholder } from '@tiptap/extensions';
+import { Selection } from '@tiptap/pm/state';
 import { normalizeInline, sanitizeHref } from '@/lib/inline';
 import { useEditorStore } from './store';
 
@@ -126,7 +127,7 @@ export function RichField({
 
   useEffect(() => {
     if (!editor) return;
-    return registerField(fieldId, (at) => editor.commands.focus(at));
+    return registerField(fieldId, (at) => focusNow(editor, at));
   }, [editor, fieldId, registerField]);
 
   return <EditorContent editor={editor} className={`rich-field ${className ?? ''}`} />;
@@ -148,4 +149,18 @@ function read(editor: TiptapEditor, rich: boolean): string {
   if (!rich) return editor.getText();
   const html = editor.getHTML().replace(/^<p>|<\/p>$/g, '');
   return normalizeInline(html);
+}
+
+/**
+ * Put the caret at the start or end and take focus, synchronously. TipTap's
+ * own focus() command waits an animation frame (a mobile workaround), and
+ * anything typed in that frame lands in the field being left: press Enter in
+ * a company name, type straight away, and the bullet text would end up in
+ * the company. ProseMirror's view focuses immediately.
+ */
+function focusNow(editor: TiptapEditor, at: 'start' | 'end') {
+  const { state, view } = editor;
+  const selection = at === 'start' ? Selection.atStart(state.doc) : Selection.atEnd(state.doc);
+  view.dispatch(state.tr.setSelection(selection));
+  view.focus();
 }

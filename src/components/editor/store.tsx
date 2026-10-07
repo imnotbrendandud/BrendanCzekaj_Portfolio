@@ -13,14 +13,20 @@ import {
 } from 'react';
 import type { Editor as TiptapEditor } from '@tiptap/core';
 import type { Portfolio } from '@/content/portfolio';
-import { validatePortfolio } from '@/content/validate';
-import type { DraftDoc } from './model';
+import type { Draft } from './model';
 
 /*
  * Editor state: the document, one undo history for everything (typing,
  * formatting, adding, moving, deleting), autosave, and focus hand-off between
  * fields.
+ *
+ * Shared by both page editors. Each one passes its own document, the
+ * validator for it, and which content file it saves to: `portfolio` for the
+ * pixel page at /gamedev, `site` for the main page.
  */
+
+/** Which content file a document saves to. Mirrors the save route's targets. */
+export type ContentTarget = 'portfolio' | 'site';
 
 /** Keystrokes in the same field this close together undo as one step. */
 const COALESCE_MS = 1000;
@@ -29,18 +35,16 @@ const SAVE_DELAY_MS = 500;
 /** A file change matching one of our writes this recent is our own echo, not an outside edit. */
 const ECHO_WINDOW_MS = 10_000;
 
+// The history itself doesn't care what the document is.
 interface History {
-  past: Portfolio[];
-  present: Portfolio;
-  future: Portfolio[];
+  past: unknown[];
+  present: unknown;
+  future: unknown[];
   lastKey: string | null;
   lastAt: number;
 }
 
-type Action =
-  | { type: 'change'; doc: Portfolio; key?: string }
-  | { type: 'undo' }
-  | { type: 'redo' };
+type Action = { type: 'change'; doc: unknown; key?: string } | { type: 'undo' } | { type: 'redo' };
 
 function reducer(state: History, action: Action): History {
   switch (action.type) {
@@ -86,10 +90,10 @@ function reducer(state: History, action: Action): History {
 
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
-interface EditorStore {
-  doc: Portfolio;
+interface EditorStore<T> {
+  doc: T;
   /** Apply a change to a copy of the document. `key` groups rapid edits into one undo step. */
-  update: (mutate: (draft: DraftDoc) => void, key?: string) => void;
+  update: (mutate: (draft: Draft<T>) => void, key?: string) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -97,9 +101,10 @@ interface EditorStore {
   status: SaveStatus;
   error: string | null;
 
+  /** /gamedev only: the open tab. */
   activeTab: number;
   setActiveTab: (index: number) => void;
-  /** The block last focused, where palette clicks insert after. */
+  /** /gamedev only: the block last focused, where palette clicks insert after. */
   selectedBlock: string | null;
   setSelectedBlock: (id: string | null) => void;
 
@@ -115,17 +120,28 @@ interface EditorStore {
   requestLink: () => void;
 }
 
-const EditorContext = createContext<EditorStore | null>(null);
+const EditorContext = createContext<EditorStore<unknown> | null>(null);
 
-export function useEditorStore(): EditorStore {
+/**
+ * The editor store, typed as the document the caller knows it's under. The
+ * default is the /gamedev document, which most editor components work on.
+ */
+export function useEditorStore<T = Portfolio>(): EditorStore<T> {
   const store = useContext(EditorContext);
   if (!store) throw new Error('useEditorStore outside EditorProvider');
-  return store;
+  return store as unknown as EditorStore<T>;
 }
 
-const canonical = (doc: Portfolio) => JSON.stringify(validatePortfolio(doc));
+interface EditorProviderProps<T> {
+  source: T;
+  /** Checks and normalises a document; the same function the page loads with. */
+  validate: (input: unknown) => T;
+  target: ContentTarget;
+  children: ReactNode;
+}
 
-export function EditorProvider({ source, children }: { source: Portfolio; children: ReactNode }) {
+export function EditorProvider<T>({ source, validate, target, children }: EditorProviderProps<T>) {
+  const canonical = useCallback((doc: unknown) => JSON.stringify(validate(doc)), [validate]);
   const [history, dispatch] = useReducer(reducer, {
     past: [],
     present: source,
@@ -133,18 +149,18 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
     lastKey: null,
     lastAt: 0,
   });
-  const doc = history.present;
+  const doc = history.present as T;
   const docRef = useRef(doc);
   docRef.current = doc;
 
-  const update = useCallback((mutate: (draft: DraftDoc) => void, key?: string) => {
+  const update = useCallback((mutate: (draft: Draft<T>) => void, key?: string) => {
     // Works on the latest document through the ref, so a callback captured
     // inside a TipTap extension never applies its change to a stale copy, and
     // two updates in one event both land.
-    const draft = structuredClone(docRef.current) as DraftDoc;
+    const draft = structuredClone(docRef.current) as Draft<T>;
     mutate(draft);
-    docRef.current = draft as Portfolio;
-    dispatch({ type: 'change', doc: draft as Portfolio, key });
+    docRef.current = draft as T;
+    dispatch({ type: 'change', doc: draft, key });
   }, []);
 
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
@@ -155,8 +171,8 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
   const [status, setStatus] = useState<SaveStatus>('saved');
   const [error, setError] = useState<string | null>(null);
   /**
-   * Versions this editor wrote recently, with when. Each save rewrites
-   * portfolio.json, hot reload hands the new file back in as `source`, and by
+   * Versions this editor wrote recently, with when. Each save rewrites the
+   * content file, hot reload hands the new file back in as `source`, and by
    * then you may have typed more, so an echo of our own write must be ignored
    * or it would roll those keystrokes back.
    *
@@ -186,7 +202,7 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
         const response = await fetch('/api/content/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: JSON.parse(json) }),
+          body: JSON.stringify({ target, content: JSON.parse(json) }),
         });
         if (!response.ok) {
           const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -206,9 +222,9 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
       }
     }, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [doc]);
+  }, [doc, canonical, target]);
 
-  // The file changed under us: you edited portfolio.json by hand, reverted it,
+  // The file changed under us: you edited the JSON by hand, reverted it,
   // or switched branches. Adopt it as a new step, which undo can still reverse.
   useEffect(() => {
     const json = JSON.stringify(source);
@@ -216,7 +232,7 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
     if (writtenAt !== undefined && Date.now() - writtenAt < ECHO_WINDOW_MS) return;
     lastWritten.current = json;
     if (json !== canonical(docRef.current)) dispatch({ type: 'change', doc: source });
-  }, [source]);
+  }, [source, canonical]);
 
   // Don't let a closing tab swallow an unsaved edit.
   useEffect(() => {
@@ -232,9 +248,18 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
   const pendingFocus = useRef<{ id: string; at: 'start' | 'end' } | null>(null);
 
   const focusField = useCallback((id: string, at: 'start' | 'end' = 'end') => {
+    // A field that already exists gets focus right now. Deferring even a
+    // frame lets fast typing land in the field being left: Enter in a title
+    // then typing straight away would put the company name in the title.
+    const existing = fields.current.get(id);
+    if (existing) {
+      pendingFocus.current = null;
+      existing(at);
+      return;
+    }
+    // Not mounted yet (a block or item just created): focus it as soon as it
+    // registers, or on the next frame if it already has by then.
     pendingFocus.current = { id, at };
-    // Wait a frame: the field may only now be rendering (a new block) or be
-    // about to be re-rendered (after a delete).
     requestAnimationFrame(() => {
       const focus = fields.current.get(id);
       if (focus && pendingFocus.current?.id === id) {
@@ -264,7 +289,10 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
   const [linkRequest, setLinkRequest] = useState(0);
   const requestLink = useCallback(() => setLinkRequest((n) => n + 1), []);
 
-  const store = useMemo<EditorStore>(
+  // Only the /gamedev document has tabs; clamp so deleting the open one is safe.
+  const tabCount = (doc as { tabs?: readonly unknown[] }).tabs?.length ?? 1;
+
+  const store = useMemo<EditorStore<T>>(
     () => ({
       doc,
       update,
@@ -274,7 +302,7 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
       canRedo: history.future.length > 0,
       status,
       error,
-      activeTab: Math.min(activeTab, doc.tabs.length - 1),
+      activeTab: Math.min(activeTab, tabCount - 1),
       setActiveTab,
       selectedBlock,
       setSelectedBlock,
@@ -295,6 +323,7 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
       status,
       error,
       activeTab,
+      tabCount,
       selectedBlock,
       focusField,
       registerField,
@@ -304,5 +333,33 @@ export function EditorProvider({ source, children }: { source: Portfolio; childr
     ],
   );
 
-  return <EditorContext.Provider value={store}>{children}</EditorContext.Provider>;
+  return (
+    <EditorContext.Provider value={store as EditorStore<unknown>}>
+      {children}
+    </EditorContext.Provider>
+  );
+}
+
+/**
+ * ⌘Z / ⇧⌘Z (and Ctrl+Y) drive the editor's one history, for typing and
+ * structure alike. Plain inputs (URLs, labels) keep the browser's own undo
+ * while you're typing in them.
+ */
+export function useUndoShortcuts(enabled: boolean) {
+  const { undo, redo } = useEditorStore<unknown>();
+  useEffect(() => {
+    if (!enabled) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey)) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'z' && key !== 'y') return;
+      const target = event.target as HTMLElement | null;
+      if (target?.matches('input, textarea, select')) return;
+      event.preventDefault();
+      if (key === 'y' || event.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [enabled, undo, redo]);
 }
